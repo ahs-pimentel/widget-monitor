@@ -28,6 +28,7 @@ final class DKProvider: UsageProvider, @unchecked Sendable {
         let events = cache.events(for: files, parse: Self.parse)
 
         var snap = Aggregator.snapshot(from: events)
+        snap.account = Accounts.dk()
         // Fonte principal do consumo da semana, para o card dizer "via OpenRouter".
         var bySource: [String: Int] = [:]
         for e in events { bySource[e.key?.components(separatedBy: "|").first ?? "", default: 0] += e.tokens.total }

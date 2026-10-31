@@ -31,10 +31,21 @@ final class SeaStore: ObservableObject {
     /// Última confirmação ("1,25 h registradas em #710"), some depois de alguns segundos.
     @Published private(set) var message: String?
 
+    /// Notificações não lidas do Dashboard.
+    @Published private(set) var notifications: [SeaNotification] = []
+    /// Dispara com as notificações que chegaram desde a última busca (o notch abre com elas).
+    let incoming = PassthroughSubject<[SeaNotification], Never>()
+    /// Ids já vistos; na primeira busca as existentes só entram aqui (não abrem o notch).
+    private var seen: Set<Int>? = (UserDefaults.standard.array(forKey: "seaSeenNotifications") as? [Int]).map(Set.init)
+    private var notifyTimer: Timer?
+    private var fetchingNotifications = false
+
     let client = SeaClient.shared
     private var userId: Int?
     /// Endereço do Dashboard informado pela credencial.
     @Published private(set) var baseURL: URL?
+    /// Conta logada na `sea` (nome · e-mail).
+    @Published private(set) var account: String?
     /// Projetos recolhidos no card (por slug), salvos entre aberturas.
     @Published private(set) var collapsed: Set<String> =
         Set(UserDefaults.standard.stringArray(forKey: "seaCollapsedProjects") ?? [])
@@ -55,6 +66,50 @@ final class SeaStore: ObservableObject {
         refreshTimer = Timer.scheduledTimer(withTimeInterval: 300, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.refresh() }
         }
+        fetchNotifications()
+        notifyTimer = Timer.scheduledTimer(withTimeInterval: 60, repeats: true) { [weak self] _ in
+            Task { @MainActor in self?.fetchNotifications() }
+        }
+    }
+
+    // MARK: - Notificações
+
+    func fetchNotifications() {
+        guard isAvailable, !fetchingNotifications else { return }
+        fetchingNotifications = true
+        let client = client
+        queue.async {
+            let list = try? client.unreadNotifications()
+            Task { @MainActor in
+                self.fetchingNotifications = false
+                guard let list else { return }
+                self.notifications = list
+                let ids = Set(list.map(\.id))
+                if let seen = self.seen {
+                    let fresh = list.filter { !seen.contains($0.id) }
+                    if !fresh.isEmpty { self.incoming.send(fresh) }
+                    self.seen = seen.union(ids)
+                } else {
+                    self.seen = ids
+                }
+                let keep = Array(self.seen ?? []).sorted().suffix(500)
+                UserDefaults.standard.set(Array(keep), forKey: "seaSeenNotifications")
+            }
+        }
+    }
+
+    /// Abre a página da notificação e a marca como lida.
+    func open(_ n: SeaNotification) {
+        if let base = baseURL, let url = n.url(base: base) {
+            NSWorkspace.shared.open(url)
+        }
+        markRead(n)
+    }
+
+    func markRead(_ n: SeaNotification) {
+        notifications.removeAll { $0.id == n.id }
+        let client = client
+        queue.async { try? client.markRead(n.id) }
     }
 
     // MARK: - Lista
@@ -62,10 +117,10 @@ final class SeaStore: ObservableObject {
     func refresh() {
         guard isAvailable, !loading else { return }
         loading = true
-        let client = client, known = userId, knownBase = baseURL
+        let client = client, known = userId, knownBase = baseURL, knownAccount = account
         queue.async {
             do {
-                let me = try known.map { ($0, knownBase) } ?? client.whoami()
+                let me = try known.map { ($0, knownBase, knownAccount) } ?? client.whoami()
                 let user = me.0
                 var all: [SeaTask] = []
                 for project in try client.projects(user: user) {
@@ -75,6 +130,7 @@ final class SeaStore: ObservableObject {
                 Task { @MainActor in
                     self.userId = user
                     self.baseURL = me.1 ?? self.baseURL
+                    self.account = me.2 ?? self.account
                     self.tasks = sorted
                     self.error = nil
                     self.updatedAt = Date()

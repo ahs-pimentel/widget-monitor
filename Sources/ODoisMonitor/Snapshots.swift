@@ -60,6 +60,21 @@ enum Snapshots {
                 .fixedSize(horizontal: false, vertical: true)
             save(name, view, scheme: .dark)
         }
+        // Aviso de notificação (com as não lidas reais, se houver).
+        let sea = SeaStore.shared
+        let until = Date().addingTimeInterval(6)
+        while sea.notifications.isEmpty, sea.isAvailable, Date() < until {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.2))
+        }
+        if !sea.notifications.isEmpty {
+            let state = NotchState()
+            state.geometry = geometry
+            state.expanded = true
+            state.banner = sea.notifications
+            let width = max(NotchMetrics.expandedWidth(geometry, store.items.count), NotchMetrics.collapsedWidth(geometry, store.items.count, timer: true)) + 40
+            save("notch-notificacao", NotchView(store: store, state: state, selection: CardSelection())
+                .frame(width: width).fixedSize(horizontal: false, vertical: true), scheme: .dark)
+        }
         print("OK: \(written.count) imagens em \(dir.path)")
     }
 }

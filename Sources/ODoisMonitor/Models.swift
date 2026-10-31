@@ -86,6 +86,8 @@ struct UsageSnapshot: Equatable {
     var blockTokens: Int?
     var blockEndsAt: Date?
     var plan: String?
+    /// Conta logada na CLI (e-mail, organização ou perfil).
+    var account: String?
     var note: String?
     /// Custo em US$; nil quando a CLI não registra custo.
     var costToday: Double?

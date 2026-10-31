@@ -14,6 +14,7 @@ struct SeaTasksCardView: View {
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.green)
             }
+            notificationsBox
             timersBox
             if let error = sea.error {
                 Label(error, systemImage: "exclamationmark.triangle")
@@ -34,6 +35,12 @@ struct SeaTasksCardView: View {
             }
             VStack(alignment: .leading, spacing: 1) {
                 Text("Tarefas").font(.system(size: 13, weight: .semibold))
+                if let account = sea.account {
+                    Label(account, systemImage: "person.crop.circle")
+                        .font(.system(size: 10)).foregroundStyle(.secondary)
+                        .lineLimit(1).truncationMode(.middle)
+                        .help("Conta logada na CLI sea")
+                }
                 Text(subtitle).font(.system(size: 11)).foregroundStyle(.secondary)
             }
             Spacer()
@@ -58,6 +65,38 @@ struct SeaTasksCardView: View {
         if sea.loading && sea.updatedAt == nil { return "Carregando do Dashboard…" }
         let open = sea.tasks.count
         return open == 0 ? "Nenhuma tarefa aberta" : "\(open) \(open == 1 ? "aberta" : "abertas") · Sea Dashboard"
+    }
+
+    // MARK: - Notificações
+
+    @ViewBuilder
+    private var notificationsBox: some View {
+        if !sea.notifications.isEmpty {
+            VStack(alignment: .leading, spacing: 6) {
+                SectionTitle("Notificações", detail: "\(sea.notifications.count) não \(sea.notifications.count == 1 ? "lida" : "lidas")")
+                ForEach(sea.notifications.prefix(3)) { n in
+                    HStack(alignment: .top, spacing: 6) {
+                        Circle().fill(Color.accentColor).frame(width: 5, height: 5).padding(.top, 5)
+                        Button { sea.open(n) } label: {
+                            VStack(alignment: .leading, spacing: 1) {
+                                Text(n.title).font(.system(size: 11, weight: .semibold)).lineLimit(1)
+                                Text(n.body).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(2)
+                            }
+                            .frame(maxWidth: .infinity, alignment: .leading)
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        .help("Abrir no Dashboard e marcar como lida")
+                        Button { sea.markRead(n) } label: {
+                            Image(systemName: "checkmark").font(.system(size: 9, weight: .bold))
+                        }
+                        .buttonStyle(.plain)
+                        .foregroundStyle(.secondary)
+                        .help("Marcar como lida")
+                    }
+                }
+            }
+        }
     }
 
     // MARK: - Cronômetros

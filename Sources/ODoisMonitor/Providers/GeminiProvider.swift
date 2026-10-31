@@ -21,6 +21,7 @@ final class GeminiProvider: UsageProvider, @unchecked Sendable {
         let events = cache.events(for: files, parse: Self.parse).deduplicated()
 
         var snap = Aggregator.snapshot(from: events)
+        snap.account = Accounts.gemini()
         if events.isEmpty {
             snap.note = "Os logs locais ainda não têm respostas com contagem de tokens."
         }

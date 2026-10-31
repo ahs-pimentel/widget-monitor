@@ -2,6 +2,13 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/). A versão atual fica em `VERSION`.
 
+## [0.6.0] — 2026-10-31
+
+### Adicionado
+- **Notificações do Dashboard no notch**: a cada 60 s busca as não lidas (`sea notify inbox --unread`); quando chega uma nova, o notch abre sozinho mostrando-a por 8 s (fica aberto com o mouse em cima), com *Abrir* (abre a página e marca como lida), *Lida* e fechar; várias de uma vez mostram "+N". As que já existiam ao abrir o app não disparam o aviso.
+- Seção **Notificações** no card de Tarefas com as não lidas (abrir ou marcar como lida).
+- **Conta logada em cada CLI**, no cabeçalho do card: Claude Code (`~/.claude.json`), Codex (e-mail das claims públicas do `id_token`), Gemini CLI (`google_accounts.json`), DK (perfil ativo e provedor) e Tarefas Sea (`sea auth whoami`). Nenhum token é exibido ou guardado. O Antigravity não grava a conta em arquivo legível e fica sem a linha.
+
 ## [0.5.0] — 2026-10-31
 
 ### Adicionado

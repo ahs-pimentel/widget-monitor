@@ -87,6 +87,8 @@ final class NotchState: ObservableObject {
     @Published var geometry = NotchGeometry(notchWidth: 0, notchHeight: 32, centerX: 0, top: 0, hasNotch: false)
     @Published var expanded = false
     @Published var contentHeight: CGFloat = 0
+    /// Notificações do Dashboard sendo mostradas (o notch abriu sozinho por causa delas).
+    @Published var banner: [SeaNotification] = []
 }
 
 /// Formato do notch: topo reto colado na borda da tela, orelhas côncavas no alto
@@ -219,8 +221,31 @@ struct NotchView: View {
         .frame(height: g.notchHeight)
     }
 
-    /// Expandido: abas com as CLIs logo abaixo da câmera e o card da selecionada.
+    /// Expandido: o aviso de notificação, se houver; senão as abas e o card da selecionada.
+    @ViewBuilder
     private func expanded(_ g: NotchGeometry) -> some View {
+        if let first = state.banner.first {
+            VStack(spacing: 0) {
+                Color.clear.frame(height: g.notchHeight)
+                NotificationBanner(
+                    notification: first, more: state.banner.count - 1,
+                    open: { sea.open(first); dismissBanner(first) },
+                    markRead: { sea.markRead(first); dismissBanner(first) },
+                    close: { dismissBanner(first) }
+                )
+                .padding(CardMetrics.padding)
+            }
+            .padding(.horizontal, NotchMetrics.ear)
+        } else {
+            tabsAndCard(g)
+        }
+    }
+
+    private func dismissBanner(_ n: SeaNotification) {
+        state.banner.removeAll { $0.id == n.id }
+    }
+
+    private func tabsAndCard(_ g: NotchGeometry) -> some View {
         VStack(spacing: 0) {
             Color.clear.frame(height: g.notchHeight)
             HStack(spacing: NotchMetrics.tabSpacing) {
@@ -345,5 +370,70 @@ struct OverviewIcon: View {
                     .foregroundStyle(.white)
             )
             .frame(width: size, height: size)
+    }
+}
+
+/// Aviso de notificação do Dashboard no notch aberto.
+struct NotificationBanner: View {
+    let notification: SeaNotification
+    let more: Int
+    let open: () -> Void
+    let markRead: () -> Void
+    let close: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            HStack(spacing: 8) {
+                Image(systemName: "bell.badge.fill")
+                    .font(.system(size: 13))
+                    .foregroundStyle(Color(nsColor: SeaProvider().tint))
+                    .brightness(0.2)
+                Text("Sea Dashboard").font(.system(size: 10, weight: .semibold)).foregroundStyle(.secondary)
+                if let date = notification.createdAt {
+                    Text("· \(Format.relative(date))").font(.system(size: 10)).foregroundStyle(.secondary)
+                }
+                Spacer()
+                if more > 0 {
+                    Text("+\(more)")
+                        .font(.system(size: 9, weight: .bold))
+                        .padding(.horizontal, 5).padding(.vertical, 2)
+                        .background(Capsule().fill(Color.white.opacity(0.15)))
+                }
+                Button(action: close) {
+                    Image(systemName: "xmark").font(.system(size: 9, weight: .bold)).foregroundStyle(.secondary)
+                }
+                .buttonStyle(.plain)
+                .help("Fechar")
+            }
+            VStack(alignment: .leading, spacing: 3) {
+                Text(notification.title).font(.system(size: 13, weight: .semibold))
+                if !notification.body.isEmpty {
+                    Text(notification.body)
+                        .font(.system(size: 11)).foregroundStyle(.secondary)
+                        .lineLimit(3)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
+            }
+            HStack(spacing: 6) {
+                if notification.path != nil {
+                    Button(action: open) {
+                        Label("Abrir", systemImage: "arrow.up.right")
+                            .font(.system(size: 10, weight: .semibold))
+                            .padding(.horizontal, 9).padding(.vertical, 4)
+                            .background(Capsule().fill(Color.accentColor.opacity(0.25)))
+                    }
+                    .buttonStyle(.plain)
+                }
+                Button(action: markRead) {
+                    Label("Lida", systemImage: "checkmark")
+                        .font(.system(size: 10, weight: .semibold))
+                        .padding(.horizontal, 9).padding(.vertical, 4)
+                        .background(Capsule().fill(Color.white.opacity(0.1)))
+                }
+                .buttonStyle(.plain)
+                Spacer()
+            }
+        }
+        .frame(maxWidth: .infinity, alignment: .leading)
     }
 }

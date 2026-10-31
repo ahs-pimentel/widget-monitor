@@ -25,6 +25,7 @@ final class ClaudeProvider: UsageProvider, @unchecked Sendable {
             snap.blockTokens = block.tokens
             snap.blockEndsAt = block.endsAt
         }
+        snap.account = Accounts.claude()
         if events.isEmpty { snap.note = "Nenhuma resposta registrada nos últimos 7 dias." }
         return snap
     }

@@ -26,6 +26,7 @@ final class CodexProvider: UsageProvider, @unchecked Sendable {
             snap.limits = latest.limits
             snap.plan = latest.plan
         }
+        snap.account = Accounts.codex()
         if events.isEmpty { snap.note = "Nenhuma sessão nos últimos 7 dias." }
         return snap
     }

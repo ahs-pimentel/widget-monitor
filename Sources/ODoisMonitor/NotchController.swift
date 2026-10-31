@@ -13,6 +13,9 @@ final class NotchController {
     private var timer: Timer?
     private var lastInside = Date.distantPast
     private var enteredAt: Date?
+    /// Até quando o notch fica aberto sozinho mostrando uma notificação.
+    private var bannerUntil: Date?
+    static let bannerDuration: TimeInterval = 8
     private var cancellables = Set<AnyCancellable>()
 
     init(store: UsageStore) {
@@ -31,6 +34,28 @@ final class NotchController {
             .receive(on: RunLoop.main)
             .sink { [weak self] _ in DispatchQueue.main.async { self?.place() } }
             .store(in: &cancellables)
+        // Notificação nova do Dashboard: abre o notch mostrando-a.
+        SeaStore.shared.incoming
+            .receive(on: RunLoop.main)
+            .sink { [weak self] fresh in self?.present(fresh) }
+            .store(in: &cancellables)
+        // Ao fechar ou marcar a última, volta ao normal (recolhe se o mouse não estiver lá).
+        state.$banner
+            .receive(on: RunLoop.main)
+            .sink { [weak self] list in
+                guard let self, list.isEmpty, self.bannerUntil != nil else { return }
+                self.bannerUntil = nil
+                if !self.visibleRect().contains(NSEvent.mouseLocation) { self.collapse() }
+            }
+            .store(in: &cancellables)
+    }
+
+    private func present(_ fresh: [SeaNotification]) {
+        guard timer != nil else { return }  // modo notch desligado
+        let known = Set(state.banner.map(\.id))
+        state.banner = fresh.filter { !known.contains($0.id) } + state.banner
+        bannerUntil = Date().addingTimeInterval(Self.bannerDuration)
+        state.expanded = true
     }
 
     func show() {
@@ -86,11 +111,16 @@ final class NotchController {
                 // Pequena espera para não abrir ao passar a caminho da barra de menus.
                 if enteredAt == nil { enteredAt = Date() }
                 if let t = enteredAt, Date().timeIntervalSince(t) > 0.12 { expand() }
-            } else {
+            } else if state.banner.isEmpty {
                 selectTab(at: mouse, in: rect)
+            } else {
+                // Mouse sobre o aviso: fica aberto enquanto estiver lá.
+                bannerUntil = nil
             }
         } else {
             enteredAt = nil
+            // Aberto por notificação: espera o tempo do aviso antes de recolher.
+            if let until = bannerUntil, Date() < until { return }
             if state.expanded, Date().timeIntervalSince(lastInside) > 0.35 { collapse() }
         }
     }
@@ -104,6 +134,8 @@ final class NotchController {
 
     private func collapse() {
         state.expanded = false
+        state.banner = []
+        bannerUntil = nil
         enteredAt = nil
     }
 

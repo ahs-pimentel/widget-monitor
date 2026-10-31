@@ -85,6 +85,14 @@ struct ProviderCardView: View {
             if showHeaderIcon { ProviderIcon(item: item, size: 24) }
             VStack(alignment: .leading, spacing: 1) {
                 Text(item.provider.name).font(.system(size: 13, weight: .semibold))
+                if let account = snap?.account, !account.isEmpty {
+                    Label(account, systemImage: "person.crop.circle")
+                        .labelStyle(.titleAndIcon)
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1).truncationMode(.middle)
+                        .help("Conta logada nesta CLI")
+                }
                 HStack(spacing: 6) {
                     ActivityLabel(last: snap?.lastActivity)
                     if loading { ProgressView().controlSize(.mini) }

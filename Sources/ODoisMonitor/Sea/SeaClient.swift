@@ -23,6 +23,22 @@ struct SeaTask: Identifiable, Equatable, Codable, Hashable {
     }
 }
 
+/// Notificação do Dashboard (caixa de entrada do usuário logado).
+struct SeaNotification: Identifiable, Equatable, Hashable {
+    let id: Int
+    let title: String
+    let body: String
+    let actor: String?
+    /// Caminho relativo da página (ex.: `/timesheet/projects/x/tasks/709-...`).
+    let path: String?
+    let createdAt: Date?
+
+    func url(base: URL) -> URL? {
+        guard let path, !path.isEmpty else { return nil }
+        return URL(string: path, relativeTo: base)?.absoluteURL
+    }
+}
+
 struct SeaActivityType: Equatable {
     let id: Int
     let label: String
@@ -57,10 +73,12 @@ final class SeaClient: Sendable {
     // MARK: - Leitura
 
     /// Usuário logado e o endereço do Dashboard da credencial (para montar links).
-    func whoami() throws -> (id: Int, base: URL?) {
+    func whoami() throws -> (id: Int, base: URL?, account: String?) {
         let data = try json(["auth", "whoami", "--json"])
-        guard let id = (data["data"] as? [String: Any])?["id"] as? Int else { throw SeaError.unexpected("whoami") }
-        return (id, (data["url"] as? String).flatMap(URL.init(string:)))
+        let me = data["data"] as? [String: Any]
+        guard let id = me?["id"] as? Int else { throw SeaError.unexpected("whoami") }
+        let account = [me?["name"] as? String, me?["email"] as? String].compactMap { $0 }.joined(separator: " · ")
+        return (id, (data["url"] as? String).flatMap(URL.init(string:)), account.isEmpty ? nil : account)
     }
 
     /// Projetos em que a pessoa está alocada de 30 dias atrás a 30 dias à frente.
@@ -100,7 +118,27 @@ final class SeaClient: Sendable {
         }
     }
 
+    /// Notificações não lidas, da mais nova para a mais antiga.
+    func unreadNotifications(limit: Int = 20) throws -> [SeaNotification] {
+        let data = try json(["notify", "inbox", "--unread", "--limit", "\(limit)", "--sort=-created_at", "--json"])
+        return (data["data"] as? [[String: Any]] ?? []).compactMap { row in
+            guard let id = row["id"] as? Int else { return nil }
+            return SeaNotification(
+                id: id,
+                title: row["title"] as? String ?? "Notificação",
+                body: row["body"] as? String ?? "",
+                actor: (row["actor"] as? [String: Any])?["name"] as? String,
+                path: row["url"] as? String,
+                createdAt: ISODate.parse(row["created_at"])
+            )
+        }
+    }
+
     // MARK: - Escrita
+
+    func markRead(_ id: Int) throws {
+        _ = try run(["notify", "read", "\(id)"])
+    }
 
     func transition(_ task: SeaTask, to status: Int) throws {
         _ = try run(["task", "transition", "\(task.number)", "\(status)", "-p", task.projectSlug])
