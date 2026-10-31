@@ -30,6 +30,11 @@ final class UsageStore: ObservableObject {
         }
     }
 
+    /// Grava os caches dos leitores de log (ao fechar o app).
+    func flush() {
+        all.forEach { $0.flush() }
+    }
+
     func detect() {
         items = all.filter(\.isInstalled).map { Item(provider: $0, icon: $0.appIcon) }
     }

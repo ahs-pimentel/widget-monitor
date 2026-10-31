@@ -1,7 +1,7 @@
 import Foundation
 
 /// Contadores de tokens de um período.
-struct TokenTotals: Equatable {
+struct TokenTotals: Equatable, Codable {
     var input = 0
     var output = 0
     var cacheRead = 0
@@ -24,7 +24,7 @@ struct TokenTotals: Equatable {
 }
 
 /// Um evento de consumo: uma resposta do modelo com tokens.
-struct UsageEvent {
+struct UsageEvent: Codable {
     let date: Date
     let model: String?
     let session: String
@@ -60,7 +60,7 @@ extension Array where Element == UsageEvent {
 }
 
 /// Limite de uso reportado pela própria CLI (ex.: Codex).
-struct RateLimit: Identifiable, Equatable {
+struct RateLimit: Identifiable, Equatable, Codable {
     var id: String { label }
     let label: String
     let usedPercent: Double

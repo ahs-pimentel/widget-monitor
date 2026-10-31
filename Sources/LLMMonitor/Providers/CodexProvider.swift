@@ -11,90 +11,96 @@ final class CodexProvider: UsageProvider, @unchecked Sendable {
     let appBundleNames = ["Codex", "ChatGPT"]
     var dataDirectory: URL { home.appendingPathComponent(".codex") }
 
-    private struct LimitsInfo { let date: Date; let limits: [RateLimit]; let plan: String? }
-    private struct FileResult { let events: [UsageEvent]; let limits: LimitsInfo? }
+    private let log = IncrementalLog(name: "codex") { CodexLineParser(url: $0) }
 
-    private let cache = JSONLCache()
-    private var limitsByFile: [String: LimitsInfo] = [:]
-    private let lock = NSLock()
+    func flush() { log.flush() }
 
     func load() -> UsageSnapshot {
         let root = dataDirectory.appendingPathComponent("sessions")
         let files = JSONLCache.recentFiles(under: root, ext: "jsonl")
-        let events = cache.events(for: files) { url in
-            let result = Self.parse(url)
-            lock.lock()
-            limitsByFile[url.path] = result.limits
-            lock.unlock()
-            return result.events
-        }.deduplicated()
+        let states = log.update(files)
+        let events = states.flatMap(\.events).deduplicated()
 
         var snap = Aggregator.snapshot(from: events)
-        lock.lock()
-        let latest = files.compactMap { limitsByFile[$0.path] }.max { $0.date < $1.date }
-        lock.unlock()
-        if let latest {
+        if let latest = states.compactMap(\.parser.limits).max(by: { $0.date < $1.date }) {
             snap.limits = latest.limits
             snap.plan = latest.plan
         }
         if events.isEmpty { snap.note = "Nenhuma sessão nos últimos 7 dias." }
         return snap
     }
+}
 
-    private static func parse(_ url: URL) -> FileResult {
-        var events: [UsageEvent] = []
-        var limits: LimitsInfo?
-        var model: String?
-        var project: String?
-        var previous: [String: Any]?
-        let session = url.deletingPathExtension().lastPathComponent
+/// Estado de um arquivo de sessão do Codex entre leituras.
+final class CodexLineParser: LineParser, Codable {
+    struct LimitsInfo: Codable { let date: Date; let limits: [RateLimit]; let plan: String? }
 
-        JSONLCache.forEachObject(in: url) { obj in
-            guard let payload = obj["payload"] as? [String: Any] else { return }
-            if obj["type"] as? String == "session_meta", project == nil, let cwd = payload["cwd"] as? String {
-                project = URL(fileURLWithPath: cwd).lastPathComponent
-                return
-            }
-            if obj["type"] as? String == "turn_context" {
-                model = payload["model"] as? String ?? model
-                return
-            }
-            guard obj["type"] as? String == "event_msg",
-                  payload["type"] as? String == "token_count",
-                  let date = ISODate.parse(obj["timestamp"]) else { return }
+    private enum P {
+        static let tokenCount = JSONBytes.pattern(#""type":"token_count""#)
+        static let turnContext = JSONBytes.pattern(#""type":"turn_context""#)
+        static let sessionMeta = JSONBytes.pattern(#""type":"session_meta""#)
+        static let model = JSONBytes.pattern(#""model":""#)
+        static let cwd = JSONBytes.pattern(#""cwd":""#)
+    }
 
-            if let rl = payload["rate_limits"] as? [String: Any] {
-                limits = LimitsInfo(date: date, limits: parseLimits(rl), plan: rl["plan_type"] as? String)
-            }
-            guard let info = payload["info"] as? [String: Any],
-                  let total = info["total_token_usage"] as? [String: Any] else { return }
+    private(set) var limits: LimitsInfo?
+    private let session: String
+    private var model: String?
+    private var project: String?
+    private var previous: [String: Int]?
 
-            // Usa a diferença do acumulado: eventos repetidos não contam duas vezes.
-            let usage: [String: Any]
-            if let prev = previous, int(total["total_tokens"]) >= int(prev["total_tokens"]) {
-                if int(total["total_tokens"]) == int(prev["total_tokens"]) { return }
-                usage = total.reduce(into: [:]) { $0[$1.key] = int($1.value) - int(prev[$1.key]) }
-            } else if let last = info["last_token_usage"] as? [String: Any] {
-                // Primeiro evento do arquivo (sessão retomada traz o acumulado anterior)
-                // ou contador zerado: conta só o último turno.
-                usage = last
-            } else {
-                usage = total
-            }
-            previous = total
+    init(url: URL) {
+        session = url.deletingPathExtension().lastPathComponent
+    }
 
-            let cached = int(usage["cached_input_tokens"])
-            let tokens = TokenTotals(
-                input: max(0, int(usage["input_tokens"]) - cached),
-                output: int(usage["output_tokens"]),
-                cacheRead: cached,
-                cacheWrite: int(usage["cache_write_input_tokens"]),
-                reasoning: int(usage["reasoning_output_tokens"])
-            )
-            let key = "\(obj["timestamp"] ?? ""):\(int(total["total_tokens"]))"
-            events.append(UsageEvent(date: date, model: model, session: session, tokens: tokens, key: key, project: project))
+    func consume(_ line: Data) -> [UsageEvent] {
+        // As linhas de conteúdo (mensagens, saídas de ferramentas) são ignoradas sem parse.
+        if JSONBytes.contains(line, P.turnContext) {
+            model = JSONBytes.string(in: line, after: P.model) ?? model
+            return []
         }
-        return FileResult(events: events, limits: limits)
+        if JSONBytes.contains(line, P.sessionMeta) {
+            if project == nil, let cwd = JSONBytes.string(in: line, after: P.cwd) {
+                project = URL(fileURLWithPath: cwd).lastPathComponent
+            }
+            return []
+        }
+        guard JSONBytes.contains(line, P.tokenCount),
+              let obj = try? JSONSerialization.jsonObject(with: line) as? [String: Any],
+              let payload = obj["payload"] as? [String: Any],
+              let date = FastISO.parse(obj["timestamp"] as? String) else { return [] }
+
+        if let rl = payload["rate_limits"] as? [String: Any] {
+            limits = LimitsInfo(date: date, limits: Self.parseLimits(rl), plan: rl["plan_type"] as? String)
+        }
+        guard let info = payload["info"] as? [String: Any],
+              let totalRaw = info["total_token_usage"] as? [String: Any] else { return [] }
+        let total = totalRaw.mapValues { int($0) }
+
+        // Usa a diferença do acumulado: eventos repetidos não contam duas vezes.
+        let usage: [String: Any]
+        if let prev = previous, total["total_tokens", default: 0] >= prev["total_tokens", default: 0] {
+            if total["total_tokens"] == prev["total_tokens"] { return [] }
+            usage = total.reduce(into: [:]) { $0[$1.key] = $1.value - prev[$1.key, default: 0] }
+        } else if let last = info["last_token_usage"] as? [String: Any] {
+            // Primeiro evento do arquivo (sessão retomada traz o acumulado anterior)
+            // ou contador zerado: conta só o último turno.
+            usage = last
+        } else {
+            usage = totalRaw
+        }
+        previous = total
+
+        let cached = int(usage["cached_input_tokens"])
+        let tokens = TokenTotals(
+            input: max(0, int(usage["input_tokens"]) - cached),
+            output: int(usage["output_tokens"]),
+            cacheRead: cached,
+            cacheWrite: int(usage["cache_write_input_tokens"]),
+            reasoning: int(usage["reasoning_output_tokens"])
+        )
+        let key = "\(obj["timestamp"] ?? ""):\(total["total_tokens", default: 0])"
+        return [UsageEvent(date: date, model: model, session: session, tokens: tokens, key: key, project: project)]
     }
 
     private static func parseLimits(_ rl: [String: Any]) -> [RateLimit] {

@@ -16,10 +16,13 @@ protocol UsageProvider: AnyObject, Sendable {
     var appBundleNames: [String] { get }
 
     func load() -> UsageSnapshot
+    /// Grava em disco o que estiver em cache (chamado ao fechar o app).
+    func flush()
 }
 
 extension UsageProvider {
     var monogram: String? { nil }
+    func flush() {}
     var home: URL { FileManager.default.homeDirectoryForCurrentUser }
 
     var isInstalled: Bool {

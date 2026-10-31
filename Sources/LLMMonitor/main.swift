@@ -1,6 +1,22 @@
 import AppKit
 import SwiftUI
 
+// `LLMMonitor --bench` mede a leitura dos logs: a primeira carga e uma recarga
+// (que relê só os arquivos alterados desde a anterior).
+if CommandLine.arguments.contains("--bench") {
+    for p in UsageStore.allProviders where p.id != SystemProvider.identifier {
+        var times: [Double] = []
+        for _ in 0..<3 {
+            let start = DispatchTime.now()
+            _ = p.load()
+            times.append(Double(DispatchTime.now().uptimeNanoseconds - start.uptimeNanoseconds) / 1e6)
+        }
+        print(String(format: "%-12@ primeira %.0f ms · recargas %.1f ms / %.1f ms", p.name as NSString, times[0], times[1], times[2]))
+        p.flush()
+    }
+    exit(0)
+}
+
 // `LLMMonitor --dump` imprime o consumo lido dos logs e sai (útil para conferir os números).
 if CommandLine.arguments.contains("--dump") {
     for p in UsageStore.allProviders where p.id != SystemProvider.identifier {

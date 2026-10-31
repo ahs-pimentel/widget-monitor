@@ -44,6 +44,10 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var lastNear = Date()
     var barShown = true
 
+    func applicationWillTerminate(_ notification: Notification) {
+        store.flush()
+    }
+
     func applicationDidFinishLaunching(_ notification: Notification) {
         buildBar()
         buildCard()
