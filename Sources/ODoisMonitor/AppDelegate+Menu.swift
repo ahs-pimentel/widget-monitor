@@ -43,6 +43,7 @@ extension AppDelegate: NSMenuDelegate {
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(login)
         menu.addItem(.separator())
+        if SeaStore.shared.isAvailable { menu.addItem(tasksMenuItem()) }
         menu.addItem(processesMenuItem())
         menu.addItem(.separator())
         let about = NSMenuItem(title: "oDois Monitor \(AppInfo.versionLabel)", action: nil, keyEquivalent: "")
@@ -126,9 +127,13 @@ extension AppDelegate: NSMenuDelegate {
         return parent
     }
 
-    /// Preenche o submenu de processos na hora em que abre (a lista muda a cada 2 s).
+    /// Preenche os submenus na hora em que abrem (processos mudam a cada 2 s; tarefas, ao usar).
     func menuNeedsUpdate(_ sub: NSMenu) {
         sub.removeAllItems()
+        if sub.identifier == Self.tasksMenuID {
+            fillTasksMenu(sub)
+            return
+        }
         let list = SystemMonitor.shared.cliProcesses
         if list.isEmpty {
             let empty = NSMenuItem(title: "Nenhuma CLI rodando", action: nil, keyEquivalent: "")
@@ -145,6 +150,65 @@ extension AppDelegate: NSMenuDelegate {
             sub.addItem(entry)
         }
     }
+
+    // MARK: - Tarefas Sea
+
+    static let tasksMenuID = NSUserInterfaceItemIdentifier("seaTasks")
+
+    private func tasksMenuItem() -> NSMenuItem {
+        let parent = NSMenuItem(title: "Tarefas Sea", action: nil, keyEquivalent: "")
+        let sub = NSMenu()
+        sub.identifier = Self.tasksMenuID
+        sub.delegate = self
+        parent.submenu = sub
+        return parent
+    }
+
+    /// No modo barra o card não recebe clique: o cronômetro é controlado por aqui.
+    private func fillTasksMenu(_ sub: NSMenu) {
+        let sea = SeaStore.shared
+        for t in sea.timers.values.sorted(by: { $0.startedAt < $1.startedAt }) {
+            let header = NSMenuItem(title: "\(t.isRunning ? "⏱" : "⏸") \(SeaStore.clock(t.elapsed())) · \(t.task.title)", action: nil, keyEquivalent: "")
+            header.isEnabled = false
+            sub.addItem(header)
+            sub.addItem(taskAction(t.isRunning ? "Pausar" : "Retomar", #selector(seaToggle(_:)), t.task.id))
+            sub.addItem(taskAction("Finalizar e registrar…", #selector(seaFinish(_:)), t.task.id))
+            sub.addItem(taskAction("Descartar…", #selector(seaDiscard(_:)), t.task.id))
+            sub.addItem(.separator())
+        }
+        let free = sea.tasks.filter { sea.timers[$0.id] == nil }
+        if free.isEmpty {
+            let empty = NSMenuItem(title: sea.loading ? "Carregando…" : "Nenhuma tarefa aberta", action: nil, keyEquivalent: "")
+            empty.isEnabled = false
+            sub.addItem(empty)
+        }
+        for task in free {
+            let entry = taskAction("▶ \(task.title)", #selector(seaToggle(_:)), task.id)
+            entry.toolTip = task.projectName + (task.isInProgress ? " · em andamento" : " · não iniciado")
+            sub.addItem(entry)
+        }
+        sub.addItem(.separator())
+        sub.addItem(item("Atualizar tarefas", #selector(seaRefresh), ""))
+    }
+
+    private func taskAction(_ title: String, _ action: Selector, _ id: Int) -> NSMenuItem {
+        let entry = NSMenuItem(title: title, action: action, keyEquivalent: "")
+        entry.target = self
+        entry.tag = id
+        return entry
+    }
+
+    private func seaTask(_ id: Int) -> SeaTask? {
+        SeaStore.shared.timers[id]?.task ?? SeaStore.shared.tasks.first { $0.id == id }
+    }
+
+    @objc private func seaToggle(_ sender: NSMenuItem) {
+        if let task = seaTask(sender.tag) { SeaStore.shared.toggle(task) }
+    }
+
+    @objc private func seaFinish(_ sender: NSMenuItem) { SeaStore.shared.finish(sender.tag) }
+    @objc private func seaDiscard(_ sender: NSMenuItem) { SeaStore.shared.discard(sender.tag) }
+    @objc private func seaRefresh() { SeaStore.shared.refresh() }
 
     @objc private func confirmStop(_ sender: NSMenuItem) {
         let pid = pid_t(sender.tag)

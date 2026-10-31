@@ -54,6 +54,7 @@ struct BarView: View {
     @ObservedObject var store: UsageStore
     @ObservedObject var state: BarState
     @ObservedObject var monitor = SystemMonitor.shared
+    @ObservedObject var sea = SeaStore.shared
 
     var body: some View {
         let hovered = state.hovered
@@ -87,7 +88,8 @@ struct BarView: View {
 
     /// Ponto verde quando houve resposta nos últimos 10 minutos.
     private func isActive(_ id: String) -> Bool {
-        Activity.isActive(store.snapshots[id]?.lastActivity)
+        if id == SeaProvider.identifier { return sea.running != nil }
+        return Activity.isActive(store.snapshots[id]?.lastActivity)
     }
 
     /// Anel do ícone: limite mais alto da CLI, ou a RAM no item Sistema.

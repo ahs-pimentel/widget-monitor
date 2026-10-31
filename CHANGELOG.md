@@ -2,6 +2,16 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/). A versão atual fica em `VERSION`.
 
+## [0.4.0] — 2026-10-31
+
+### Adicionado
+- **Tarefas do Sea Dashboard com cronômetro** (item *Tarefas Sea*, aparece quando a CLI `sea` está logada):
+  - Lista as tarefas atribuídas a você em **não iniciado** e **em andamento**, por projeto, nos projetos em que você está alocado (30 dias para trás e para frente). Atualiza a cada 5 min ou no botão.
+  - **Iniciar / pausar / retomar** com cronômetro local (funciona sem rede e sobrevive a fechar o app); só um roda por vez. Iniciar uma tarefa *não iniciado* a passa para *em andamento* no Dashboard.
+  - **Finalizar** abre uma confirmação com horas (editáveis), data, tipo de atividade (lembra o último por projeto) e comentário; ao confirmar, grava na **sua** folha de horas da semana (cria a folha se faltar, conferindo o dono).
+  - Cronômetro visível no notch fechado e na visão geral; no modo barra, controle pelo submenu *Tarefas Sea* do clique direito.
+- A credencial é a da própria CLI `sea`; o app nunca lê nem mostra o token.
+
 ## [0.3.0] — 2026-10-31
 
 ### Adicionado

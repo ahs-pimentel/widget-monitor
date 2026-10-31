@@ -6,14 +6,16 @@ struct OverviewCardView: View {
 
     @ObservedObject var store: UsageStore
     @ObservedObject var monitor: SystemMonitor
+    @ObservedObject var sea = SeaStore.shared
 
     private var providers: [UsageStore.Item] {
-        store.items.filter { $0.id != SystemProvider.identifier }
+        store.items.filter { $0.id != SystemProvider.identifier && $0.id != SeaProvider.identifier }
     }
 
     var body: some View {
         VStack(alignment: .leading, spacing: CardMetrics.spacing) {
             header
+            if let running = sea.running { timer(running) }
             VStack(spacing: 0) {
                 ForEach(Array(sortedProviders.enumerated()), id: \.element.id) { index, item in
                     if index > 0 { Divider().opacity(0.5) }
@@ -88,6 +90,26 @@ struct OverviewCardView: View {
             }
         }
         .padding(.vertical, 6)
+    }
+
+    /// Tarefa com cronômetro rodando (Sea Dashboard).
+    private func timer(_ t: TaskTimer) -> some View {
+        HStack(spacing: 8) {
+            Image(systemName: "timer")
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(Color(nsColor: SeaProvider().tint))
+            VStack(alignment: .leading, spacing: 1) {
+                Text(t.task.title).font(.system(size: 11, weight: .semibold)).lineLimit(1)
+                Text(t.task.projectName).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
+            }
+            Spacer(minLength: 6)
+            TimelineView(.periodic(from: .now, by: 1)) { ctx in
+                Text(SeaStore.clock(t.elapsed(now: ctx.date)))
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .monospacedDigit()
+            }
+        }
+        .modifier(InsetBox())
     }
 
     private var system: some View {

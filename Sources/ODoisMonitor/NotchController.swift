@@ -54,7 +54,7 @@ final class NotchController {
         let (screen, g) = NotchGeometry.current()
         state.geometry = g
         // O painel comporta o maior dos dois formatos (fechado pode ser mais largo que aberto).
-        let width = max(NotchMetrics.expandedWidth(g, store.items.count), NotchMetrics.collapsedWidth(g, store.items.count)) + 40
+        let width = max(NotchMetrics.expandedWidth(g, store.items.count), NotchMetrics.collapsedWidth(g, store.items.count, timer: true)) + 40
         let height = min(NotchMetrics.windowHeight, (screen?.frame.height ?? NotchMetrics.windowHeight) - 20)
         panel.setFrame(NSRect(x: g.centerX - width / 2, y: g.top - height, width: width, height: height), display: true)
     }

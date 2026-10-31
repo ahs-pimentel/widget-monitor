@@ -18,6 +18,8 @@ struct UsageCardView: View {
         let inner = Group {
             if selection.id == OverviewCardView.id {
                 OverviewCardView(store: store, monitor: .shared)
+            } else if selection.id == SeaProvider.identifier {
+                SeaTasksCardView(sea: .shared, showHeaderIcon: !embedded)
             } else if selection.id == SystemProvider.identifier {
                 SystemCardView(
                     monitor: .shared,

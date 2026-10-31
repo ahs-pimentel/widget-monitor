@@ -78,6 +78,11 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             }
             .store(in: &cancellables)
 
+        // Carrega as tarefas do Sea Dashboard já na abertura (o notch mostra o cronômetro).
+        if SeaStore.shared.isAvailable { SeaStore.shared.objectWillChange.sink { [weak self] in
+            DispatchQueue.main.async { self?.layoutCard() }
+        }.store(in: &cancellables) }
+
         restoreDock()
         applyAutoHide()
         installDragMonitor()

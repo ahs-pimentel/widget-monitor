@@ -37,6 +37,8 @@ struct SectionTitle: View {
             Text(title.uppercased())
                 .font(.system(size: 10, weight: .semibold))
                 .tracking(0.4)
+                .lineLimit(1)
+                .truncationMode(.tail)
                 .foregroundStyle(.secondary)
             Spacer()
             if let detail {

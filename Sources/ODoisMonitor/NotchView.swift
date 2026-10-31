@@ -53,8 +53,13 @@ enum NotchMetrics {
         return max(minWing, n * wingIcon + (n - 1) * wingSpacing + wingPadding * 2)
     }
 
-    static func collapsedWidth(_ g: NotchGeometry, _ count: Int) -> CGFloat {
-        g.notchWidth + wing(count) * 2 + ear * 2
+    /// Espaço extra nas asas para o cronômetro de tarefa quando há um rodando.
+    static let timerWidth: CGFloat = 64
+
+    /// `timer` nil = estado atual do cronômetro; true = pior caso (para dimensionar o painel).
+    @MainActor static func collapsedWidth(_ g: NotchGeometry, _ count: Int, timer: Bool? = nil) -> CGFloat {
+        let extra = (timer ?? (SeaStore.shared.running != nil)) ? timerWidth : 0
+        return g.notchWidth + (wing(count) + extra) * 2 + ear * 2
     }
 
     /// Aberto, há uma aba a mais: a visão geral, antes das CLIs.
@@ -122,6 +127,7 @@ struct NotchView: View {
     @ObservedObject var state: NotchState
     @ObservedObject var selection: CardSelection
     @ObservedObject var monitor = SystemMonitor.shared
+    @ObservedObject var sea = SeaStore.shared
 
     var body: some View {
         let g = state.geometry
@@ -151,11 +157,25 @@ struct NotchView: View {
 
     /// Fechado: ícones à esquerda da câmera e o total do dia à direita.
     private func collapsed(_ g: NotchGeometry) -> some View {
-        let wing = NotchMetrics.wing(store.items.count)
+        let wing = NotchMetrics.wing(store.items.count) + (sea.running != nil ? NotchMetrics.timerWidth : 0)
         return HStack(spacing: 0) {
             HStack(spacing: NotchMetrics.wingSpacing) {
                 ForEach(store.items) { item in
                     ProviderIcon(item: item, size: NotchMetrics.wingIcon, active: isActive(item.id))
+                }
+                if let running = sea.running {
+                    // Cronômetro da tarefa em andamento, à vista sem abrir o notch.
+                    TimelineView(.periodic(from: .now, by: 1)) { ctx in
+                        HStack(spacing: 3) {
+                            Image(systemName: "timer").font(.system(size: 9, weight: .bold))
+                            Text(SeaStore.clock(running.elapsed(now: ctx.date)))
+                                .font(.system(size: 11, weight: .bold, design: .rounded))
+                                .monospacedDigit()
+                        }
+                        .foregroundStyle(Color(nsColor: SeaProvider().tint).opacity(1))
+                        .brightness(0.25)
+                    }
+                    .help(running.task.title)
                 }
             }
             .frame(width: wing)
@@ -235,7 +255,8 @@ struct NotchView: View {
     }
 
     private func isActive(_ id: String) -> Bool {
-        Activity.isActive(store.snapshots[id]?.lastActivity)
+        if id == SeaProvider.identifier { return sea.running != nil }
+        return Activity.isActive(store.snapshots[id]?.lastActivity)
     }
 
     private func ring(for id: String) -> Attention? {

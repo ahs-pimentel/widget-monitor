@@ -54,7 +54,7 @@ enum Snapshots {
             state.expanded = expandedId != nil
             let selection = CardSelection()
             selection.id = expandedId
-            let width = max(NotchMetrics.expandedWidth(geometry, store.items.count), NotchMetrics.collapsedWidth(geometry, store.items.count)) + 40
+            let width = max(NotchMetrics.expandedWidth(geometry, store.items.count), NotchMetrics.collapsedWidth(geometry, store.items.count, timer: true)) + 40
             let view = NotchView(store: store, state: state, selection: selection)
                 .frame(width: width)
                 .fixedSize(horizontal: false, vertical: true)
