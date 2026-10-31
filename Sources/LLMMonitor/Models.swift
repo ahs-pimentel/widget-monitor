@@ -47,6 +47,10 @@ struct SessionUsage: Identifiable, Equatable {
     var messages = 0
     var first: Date
     var last: Date
+    /// Tokens nos últimos 60 minutos (alerta de sessão disparando).
+    var lastHourTokens = 0
+    /// Maior consumo dentro de uma mesma hora do relógio nos últimos 7 dias.
+    var peakHourTokens = 0
 }
 
 extension Array where Element == UsageEvent {
@@ -107,6 +111,8 @@ enum Aggregator {
         var costToday = 0.0, costWeek = 0.0
         var sessions: [String: SessionUsage] = [:]
         var sessionModels: [String: [String: Int]] = [:]
+        var sessionHours: [String: [Int: Int]] = [:]
+        let lastHourStart = now.addingTimeInterval(-3600)
 
         for e in events where e.date >= startWeek {
             snap.week += e.tokens
@@ -119,7 +125,9 @@ enum Aggregator {
             s.first = min(s.first, e.date)
             s.last = max(s.last, e.date)
             if s.project == nil { s.project = e.project }
+            if e.date >= lastHourStart { s.lastHourTokens += e.tokens.total }
             sessions[e.session] = s
+            sessionHours[e.session, default: [:]][Int(e.date.timeIntervalSince1970 / 3600), default: 0] += e.tokens.total
             if let m = e.model { sessionModels[e.session, default: [:]][m, default: 0] += e.tokens.total }
             let dayIndex = cal.dateComponents([.day], from: startWeek, to: cal.startOfDay(for: e.date)).day ?? 0
             if (0..<7).contains(dayIndex) { snap.daily[dayIndex] += e.tokens.total }
@@ -137,6 +145,7 @@ enum Aggregator {
             .map { s in
                 var s = s
                 s.model = sessionModels[s.id]?.max { $0.value < $1.value }?.key
+                s.peakHourTokens = sessionHours[s.id]?.values.max() ?? 0
                 return s
             }
             .sorted { $0.last > $1.last }

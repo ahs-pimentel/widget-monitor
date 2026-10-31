@@ -31,6 +31,11 @@ extension AppDelegate {
         hide.state = autoHide ? .on : .off
         hide.isEnabled = !notchMode
         menu.addItem(hide)
+        menu.addItem(.separator())
+        let alertsItem = item("Alertas", #selector(toggleAlerts), "")
+        alertsItem.state = alerts.enabled ? .on : .off
+        menu.addItem(alertsItem)
+        menu.addItem(item("Enviar alerta de teste", #selector(testAlert), ""))
         let login = item("Abrir ao iniciar sessão", #selector(toggleLogin), "")
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(login)
@@ -94,6 +99,13 @@ extension AppDelegate {
         }
         rebuildMenu()
     }
+
+    @objc private func toggleAlerts() {
+        alerts.enabled.toggle()
+        rebuildMenu()
+    }
+
+    @objc private func testAlert() { alerts.sendTest() }
 
     @objc private func quit() { NSApp.terminate(nil) }
 }

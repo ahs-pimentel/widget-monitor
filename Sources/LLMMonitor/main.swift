@@ -7,6 +7,32 @@ if let i = CommandLine.arguments.firstIndex(of: "--snapshot") {
     exit(0)
 }
 
+// `LLMMonitor --alerts` mostra o que os alertas avisariam agora e o pico por hora das
+// sessões (para calibrar o limite de "sessão consumindo rápido").
+if CommandLine.arguments.contains("--alerts") {
+    var snapshots: [String: UsageSnapshot] = [:]
+    var names: [String: String] = [:]
+    for p in UsageStore.allProviders where p.id != SystemProvider.identifier && p.isInstalled {
+        snapshots[p.id] = p.load()
+        names[p.id] = p.name
+    }
+    let peaks = snapshots.flatMap { id, s in s.sessions.map { (names[id] ?? id, $0) } }
+        .sorted { $0.1.peakHourTokens > $1.1.peakHourTokens }
+    print("Maiores picos por hora (7 dias):")
+    for (name, s) in peaks.prefix(6) {
+        print("  \(name) · \(s.project ?? "?"): \(Format.tokens(s.peakHourTokens))/h · última hora \(Format.tokens(s.lastHourTokens))")
+    }
+    print("Limite atual de sessão: \(Format.tokens(AlertRules.sessionTokensPerHour))/h")
+    MainActor.assumeIsolated {
+        let m = SystemMonitor.shared
+        RunLoop.main.run(until: Date().addingTimeInterval(2.5))
+        let alerts = AlertRules.evaluate(snapshots: snapshots, names: names, system: m.current, processes: m.processes)
+        print("Alertas agora (\(alerts.count)):")
+        for a in alerts { print("  [\(a.key)] \(a.title) — \(a.body)") }
+    }
+    exit(0)
+}
+
 // `LLMMonitor --bench` mede a leitura dos logs: a primeira carga e uma recarga
 // (que relê só os arquivos alterados desde a anterior).
 if CommandLine.arguments.contains("--bench") {

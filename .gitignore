@@ -16,3 +16,15 @@
 build/
 *.xcodeproj/xcuserdata/
 .swiftpm/
+
+# Ferramentas de agentes (locais, não fazem parte do app)
+.agents/
+.claude/
+.claude-flow/
+.swarm/
+.mcp.json
+agentdb.rvf
+agentdb.rvf.idmap.json
+ruvector.db
+AGENTS.md
+CLAUDE.md

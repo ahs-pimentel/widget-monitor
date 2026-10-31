@@ -7,6 +7,7 @@ import SwiftUI
 final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     let store = UsageStore()
     let selection = CardSelection()
+    let alerts = AlertCenter()
     lazy var barState = BarState(
         orientation: BarOrientation(rawValue: UserDefaults.standard.string(forKey: Keys.orientation) ?? "") ?? .horizontal
     )
@@ -61,6 +62,19 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
             .receive(on: RunLoop.main)
             .sink { [weak self] in DispatchQueue.main.async { self?.layoutCard() } }
             .store(in: &cancellables)
+        // Alertas: reavalia quando chegam dados novos das CLIs ou do sistema.
+        let monitor = SystemMonitor.shared
+        Publishers.CombineLatest(store.$snapshots, monitor.$current)
+            .debounce(for: .seconds(1), scheduler: RunLoop.main)
+            .sink { [weak self] snapshots, system in
+                guard let self else { return }
+                let names = Dictionary(uniqueKeysWithValues: store.items.map { ($0.id, $0.provider.name) })
+                alerts.handle(AlertRules.evaluate(
+                    snapshots: snapshots, names: names, system: system, processes: monitor.processes
+                ))
+            }
+            .store(in: &cancellables)
+
         restoreDock()
         applyAutoHide()
         installDragMonitor()
