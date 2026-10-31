@@ -13,7 +13,9 @@ enum Snapshots {
         let monitor = SystemMonitor.shared
         // Espera os dados das CLIs e algumas amostras do sistema para os gráficos.
         let deadline = Date().addingTimeInterval(15)
-        while (store.snapshots.count < store.items.count || monitor.history.count < 4), Date() < deadline {
+        let sea = SeaStore.shared
+        while (store.snapshots.count < store.items.count || monitor.history.count < 4
+               || (sea.isAvailable && sea.updatedAt == nil)), Date() < deadline {
             RunLoop.main.run(until: Date().addingTimeInterval(0.2))
         }
 
@@ -61,7 +63,6 @@ enum Snapshots {
             save(name, view, scheme: .dark)
         }
         // Aviso de notificação (com as não lidas reais, se houver).
-        let sea = SeaStore.shared
         let until = Date().addingTimeInterval(6)
         while sea.notifications.isEmpty, sea.isAvailable, Date() < until {
             RunLoop.main.run(until: Date().addingTimeInterval(0.2))

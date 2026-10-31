@@ -2,6 +2,18 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/). A versão atual fica em `VERSION`.
 
+## [0.7.0] — 2026-10-31
+
+### Alterado
+- **Card de Tarefas Sea redesenhado**:
+  - Cronômetro em destaque num cartão com gradiente (azul-petróleo → índigo): indicador "GRAVANDO" pulsando, relógio grande, anel com o progresso da hora corrente e as horas completas, botões *Pausar* / *Finalizar* e descartar.
+  - Cronômetros pausados em linhas próprias com retomar e finalizar.
+  - Sem cronômetro: convite "Escolha uma tarefa para começar"; sem tarefas: "Tudo em dia".
+  - Cabeçalho com selos "em andamento" / "a iniciar" e conta da `sea` (nome; e-mail no tooltip).
+  - Cada projeto ganha uma cor estável (barra lateral, contador e número da tarefa); tarefas em linhas com número em fonte monoespaçada, status e botão ▶ em gradiente.
+  - Notificações com sino, contador e destaque lateral.
+- `--snapshot` espera as tarefas do Dashboard carregarem antes de desenhar.
+
 ## [0.6.0] — 2026-10-31
 
 ### Adicionado
