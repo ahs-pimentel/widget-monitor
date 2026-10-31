@@ -19,7 +19,7 @@ final class UsageStore: ObservableObject {
         ClaudeProvider(), CodexProvider(), GeminiProvider(), DKProvider(), SystemProvider(),
     ]
     private let all = UsageStore.allProviders
-    private let queue = DispatchQueue(label: "llm-monitor.load", qos: .utility)
+    private let queue = DispatchQueue(label: "odois-monitor.load", qos: .utility)
     private var timer: Timer?
 
     init() {

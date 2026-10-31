@@ -42,7 +42,7 @@ final class IncrementalLog<Parser: LineParser>: @unchecked Sendable {
     init(name: String, makeParser: @escaping (URL) -> Parser) {
         self.makeParser = makeParser
         cacheURL = FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first?
-            .appendingPathComponent("br.com.seatecnologia.llmmonitor", isDirectory: true)
+            .appendingPathComponent("me.o2d.odoismonitor", isDirectory: true)
             .appendingPathComponent("\(name)-v\(Self.cacheVersion).plist")
         loadCache()
     }

@@ -1,7 +1,7 @@
 import AppKit
 import SwiftUI
 
-/// `LLMMonitor --snapshot <pasta>` desenha a barra, os cards e o notch em PNG com os dados
+/// `ODoisMonitor --snapshot <pasta>` desenha a barra, os cards e o notch em PNG com os dados
 /// reais, sem abrir janelas nem pedir permissão de gravação de tela. Serve para conferir o
 /// visual e comparar antes/depois de uma mudança.
 @MainActor

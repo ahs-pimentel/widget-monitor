@@ -54,7 +54,7 @@ final class SystemMonitor: ObservableObject {
     @Published private(set) var processes: [ProcessUsage] = []
 
     private let sampler = Sampler()
-    private let queue = DispatchQueue(label: "llm-monitor.system", qos: .utility)
+    private let queue = DispatchQueue(label: "odois-monitor.system", qos: .utility)
     private var timer: Timer?
 
     init() {

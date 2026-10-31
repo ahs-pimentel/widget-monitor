@@ -7,7 +7,16 @@ if let i = CommandLine.arguments.firstIndex(of: "--snapshot") {
     exit(0)
 }
 
-// `LLMMonitor --alerts` mostra o que os alertas avisariam agora e o pico por hora das
+// `ODoisMonitor --test-alert` (rodando de dentro do .app) envia a notificação de teste.
+if CommandLine.arguments.contains("--test-alert") {
+    MainActor.assumeIsolated {
+        AlertCenter().sendTest()
+        RunLoop.main.run(until: Date().addingTimeInterval(2))
+    }
+    exit(0)
+}
+
+// `ODoisMonitor --alerts` mostra o que os alertas avisariam agora e o pico por hora das
 // sessões (para calibrar o limite de "sessão consumindo rápido").
 if CommandLine.arguments.contains("--alerts") {
     var snapshots: [String: UsageSnapshot] = [:]
@@ -33,7 +42,7 @@ if CommandLine.arguments.contains("--alerts") {
     exit(0)
 }
 
-// `LLMMonitor --bench` mede a leitura dos logs: a primeira carga e uma recarga
+// `ODoisMonitor --bench` mede a leitura dos logs: a primeira carga e uma recarga
 // (que relê só os arquivos alterados desde a anterior).
 if CommandLine.arguments.contains("--bench") {
     for p in UsageStore.allProviders where p.id != SystemProvider.identifier {
@@ -49,7 +58,7 @@ if CommandLine.arguments.contains("--bench") {
     exit(0)
 }
 
-// `LLMMonitor --dump` imprime o consumo lido dos logs e sai (útil para conferir os números).
+// `ODoisMonitor --dump` imprime o consumo lido dos logs e sai (útil para conferir os números).
 if CommandLine.arguments.contains("--dump") {
     for p in UsageStore.allProviders where p.id != SystemProvider.identifier {
         print("== \(p.name)  instalado=\(p.isInstalled)  binário=\(BinaryLocator.find(p.binary) ?? "-")")

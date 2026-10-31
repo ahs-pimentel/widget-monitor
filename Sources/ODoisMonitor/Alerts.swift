@@ -114,13 +114,27 @@ final class AlertCenter: NSObject, UNUserNotificationCenterDelegate {
         if record != sent { sent = record }
     }
 
+    /// Envia o alerta de teste. Se o macOS tiver negado as notificações, o envio seria
+    /// descartado em silêncio: avisa e abre os ajustes de notificação do app.
     func sendTest() {
+        center?.getNotificationSettings { settings in
+            guard settings.authorizationStatus == .denied else { return }
+            print("Notificações negadas para o oDois Monitor: libere em Ajustes do Sistema › Notificações.")
+            DispatchQueue.main.async { Self.openNotificationSettings() }
+        }
         deliver(Alert(
             key: "test:\(UUID().uuidString)",
-            title: "LLM Monitor",
+            title: "oDois Monitor",
             body: "Alerta de teste: as notificações estão funcionando.",
             cooldown: nil
         ))
+    }
+
+    nonisolated static func openNotificationSettings() {
+        let id = Bundle.main.bundleIdentifier ?? ""
+        if let url = URL(string: "x-apple.systempreferences:com.apple.Notifications-Settings.extension?id=\(id)") {
+            NSWorkspace.shared.open(url)
+        }
     }
 
     private func deliver(_ alert: Alert) {

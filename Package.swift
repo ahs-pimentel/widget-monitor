@@ -2,12 +2,12 @@
 import PackageDescription
 
 let package = Package(
-    name: "LLMMonitor",
+    name: "ODoisMonitor",
     platforms: [.macOS(.v14)],
     targets: [
         .executableTarget(
-            name: "LLMMonitor",
-            path: "Sources/LLMMonitor",
+            name: "ODoisMonitor",
+            path: "Sources/ODoisMonitor",
             swiftSettings: [.swiftLanguageMode(.v5)]
         )
     ]

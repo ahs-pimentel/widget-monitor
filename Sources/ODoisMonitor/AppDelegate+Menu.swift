@@ -94,7 +94,7 @@ extension AppDelegate {
         } catch {
             let alert = NSAlert()
             alert.messageText = "Não foi possível alterar a abertura automática"
-            alert.informativeText = "\(error.localizedDescription)\nRode o app a partir do LLMMonitor.app (scripts/build-app.sh)."
+            alert.informativeText = "\(error.localizedDescription)\nRode o app a partir do oDois Monitor.app (scripts/build-app.sh)."
             alert.runModal()
         }
         rebuildMenu()
