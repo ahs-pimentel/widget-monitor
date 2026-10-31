@@ -44,9 +44,12 @@ enum NotchMetrics {
     /// Altura da janela: comporta o notch expandido com folga.
     static let windowHeight: CGFloat = 900
 
+    /// Largura mínima da asa: cabe o histórico de CPU, a barra de RAM e o total de tokens.
+    static let minWing: CGFloat = 112
+
     static func wing(_ count: Int) -> CGFloat {
         let n = CGFloat(max(count, 1))
-        return max(64, n * wingIcon + (n - 1) * wingSpacing + wingPadding * 2)
+        return max(minWing, n * wingIcon + (n - 1) * wingSpacing + wingPadding * 2)
     }
 
     static func collapsedWidth(_ g: NotchGeometry, _ count: Int) -> CGFloat {
@@ -150,12 +153,9 @@ struct NotchView: View {
 
             Color.clear.frame(width: g.notchWidth)
 
-            // Total de tokens do dia e um ponto com a cor da pressão de memória.
-            HStack(spacing: 5) {
-                Circle()
-                    .fill(monitor.current.pressureLevel.color)
-                    .frame(width: 6, height: 6)
-                    .help("Pressão de memória: \(monitor.current.pressureLevel.label)")
+            // Processamento e memória em miniatura, seguidos do total de tokens do dia.
+            HStack(spacing: 6) {
+                CollapsedSystemMeters(monitor: monitor)
                 Text(Format.tokens(todayTotal))
                     .font(.system(size: 11, weight: .semibold, design: .rounded))
                     .foregroundStyle(.white.opacity(0.85))
@@ -201,5 +201,47 @@ struct NotchView: View {
     private func isActive(_ id: String) -> Bool {
         guard let last = store.snapshots[id]?.lastActivity else { return false }
         return Date().timeIntervalSince(last) < 600
+    }
+}
+
+/// Notch fechado: histórico curto de CPU e barra de RAM colorida pela pressão de memória.
+struct CollapsedSystemMeters: View {
+    @ObservedObject var monitor: SystemMonitor
+    static let cpuSamples = 10
+
+    var body: some View {
+        let s = monitor.current
+        let cpu = Array(monitor.history.suffix(Self.cpuSamples).map(\.cpu))
+        let padded = Array(repeating: 0.0, count: max(0, Self.cpuSamples - cpu.count)) + cpu
+        let ram = s.ramTotal > 0 ? Double(s.ramUsed) / Double(s.ramTotal) : 0
+        let ramColor: Color = s.pressureLevel == .normal ? .purple : s.pressureLevel.color
+
+        HStack(alignment: .bottom, spacing: 5) {
+            HStack(alignment: .bottom, spacing: 1) {
+                ForEach(padded.indices, id: \.self) { i in
+                    bar(padded[i], color: .blue, width: 2)
+                }
+            }
+            bar(ram, color: ramColor, width: 5)
+        }
+        .frame(height: Self.height)
+        .help(
+            "CPU \(Int((s.cpu * 100).rounded()))% · RAM \(Bytes.format(s.ramUsed)) de \(Bytes.format(s.ramTotal))"
+                + " · pressão \(s.pressureLevel.label.lowercased())"
+        )
+    }
+
+    static let height: CGFloat = 14
+
+    /// Trilho apagado com o preenchimento de baixo para cima (mínimo de 1 pt para não sumir).
+    private func bar(_ value: Double, color: Color, width: CGFloat) -> some View {
+        let v = min(max(value, 0), 1)
+        return ZStack(alignment: .bottom) {
+            RoundedRectangle(cornerRadius: 1).fill(Color.white.opacity(0.12))
+            RoundedRectangle(cornerRadius: 1)
+                .fill(color)
+                .frame(height: max(1, Self.height * v))
+        }
+        .frame(width: width, height: Self.height)
     }
 }
