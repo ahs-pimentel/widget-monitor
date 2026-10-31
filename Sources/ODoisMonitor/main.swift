@@ -16,6 +16,18 @@ if CommandLine.arguments.contains("--test-alert") {
     exit(0)
 }
 
+// `ODoisMonitor --ranking` consulta o ranking pela API (diagnóstico; nunca imprime o token).
+if CommandLine.arguments.contains("--ranking") {
+    print("credencial:", SeaAPI.credential().map { "ok (\($0.url.host ?? "?"))" } ?? "não encontrada")
+    do {
+        let user = try SeaClient.shared.whoami().id
+        print(try SeaAPI.ranking(user: user).map { "\($0)" } ?? "a API não devolveu a pontuação completa")
+    } catch {
+        print("erro:", error.localizedDescription)
+    }
+    exit(0)
+}
+
 // `ODoisMonitor --alerts` mostra o que os alertas avisariam agora e o pico por hora das
 // sessões (para calibrar o limite de "sessão consumindo rápido").
 if CommandLine.arguments.contains("--alerts") {

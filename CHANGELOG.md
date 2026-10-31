@@ -2,6 +2,13 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/). A versão atual fica em `VERSION`.
 
+## [0.8.1] — 2026-10-31
+
+### Corrigido
+- **Ranking**: a pontuação mostrada (200, 22º) era só a parte manual — a API pública (`/api/v1/ops/ranking_summary`) não inclui critérios automáticos nem medalhas, e a página "Melhores do Ano" (3.320,01, 15º de 76) é montada no servidor e só abre com a sessão do navegador. A faixa de ranking fica oculta até a API expor o total.
+- O app já consulta a API com `user_id` usando a credencial da `sea` (token só em memória); quando ela passar a devolver `total_score` completo, a faixa volta sozinha, com a composição medalhas / automático / manual.
+- `--ranking`: diagnóstico da consulta (nunca imprime o token).
+
 ## [0.8.0] — 2026-10-31
 
 ### Adicionado

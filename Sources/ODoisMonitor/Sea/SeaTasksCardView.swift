@@ -88,22 +88,40 @@ struct SeaTasksCardView: View {
                 .frame(width: 28, height: 28)
                 .shadow(color: .orange.opacity(0.35), radius: 4, y: 2)
 
-                VStack(alignment: .leading, spacing: 3) {
+                VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 4) {
-                        Text("\(r.position)º")
-                            .font(.system(size: 18, weight: .heavy, design: .rounded))
-                        Text("de \(r.total)").font(.system(size: 10)).foregroundStyle(.secondary)
+                        if let position = r.position {
+                            Text("\(position)º")
+                                .font(.system(size: 18, weight: .heavy, design: .rounded))
+                            if let total = r.total {
+                                Text("de \(total)").font(.system(size: 10)).foregroundStyle(.secondary)
+                            }
+                        } else {
+                            Text("Ranking \(String(r.year))")
+                                .font(.system(size: 11, weight: .semibold))
+                        }
                         Spacer(minLength: 4)
                         Text("\(Self.points(r.score)) pts")
-                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .font(.system(size: 15, weight: .heavy, design: .rounded))
                             .monospacedDigit()
                     }
-                    Text(rankingHint(r))
-                        .font(.system(size: 10, weight: .medium))
-                        .foregroundStyle(r.gap == nil ? Color.orange : Color.secondary)
-                        .lineLimit(1)
-                    Meter(value: r.leaderScore > 0 ? r.score / r.leaderScore : 0, color: .orange, height: 4)
-                        .help("Pontuação geral de \(String(r.year)) · líder com \(Self.points(r.leaderScore)) pts")
+                    // Composição dos pontos: medalhas, demais automáticos e manuais.
+                    let others = max(r.automatic - r.badges, 0)
+                    GeometryReader { geo in
+                        let total = max(r.score, 1)
+                        HStack(spacing: 2) {
+                            Rectangle().fill(Color.orange).frame(width: geo.size.width * r.badges / total)
+                            Rectangle().fill(Color.yellow.opacity(0.8)).frame(width: geo.size.width * others / total)
+                            Rectangle().fill(Color.pink.opacity(0.8))
+                        }
+                        .clipShape(Capsule())
+                    }
+                    .frame(height: 5)
+                    HStack(spacing: 8) {
+                        legend("Medalhas", r.badges, .orange)
+                        legend("Automático", others, Color.yellow.opacity(0.8))
+                        legend("Manual", r.manual, Color.pink.opacity(0.8))
+                    }
                 }
             }
             .padding(CardMetrics.boxPadding)
@@ -114,19 +132,24 @@ struct SeaTasksCardView: View {
                         startPoint: .leading, endPoint: .trailing
                     ))
             )
+            .help("Pontuação geral de \(String(r.year)) no ranking do Dashboard")
         }
     }
 
-    private func rankingHint(_ r: SeaRanking) -> String {
-        guard let gap = r.gap, let next = r.nextPosition else { return "Você lidera o ranking 🎉" }
-        let tie = r.tied > 0 ? "Empatado com \(r.tied) · " : ""
-        return tie + "+\(Self.points(gap)) pts para o \(next)º"
+    private func legend(_ label: String, _ value: Double, _ color: Color) -> some View {
+        HStack(spacing: 3) {
+            Circle().fill(color).frame(width: 5, height: 5)
+            Text("\(label) \(Self.points(value))")
+                .font(.system(size: 9)).foregroundStyle(.secondary)
+                .lineLimit(1)
+        }
     }
 
     private static func points(_ v: Double) -> String {
         let f = NumberFormatter()
         f.locale = Locale(identifier: "pt_BR")
-        f.maximumFractionDigits = v.rounded() == v ? 0 : 1
+        f.maximumFractionDigits = v.rounded() == v ? 0 : 2
+        f.minimumFractionDigits = v.rounded() == v ? 0 : 2
         return f.string(from: NSNumber(value: v)) ?? "\(Int(v))"
     }
 
