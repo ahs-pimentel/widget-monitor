@@ -16,7 +16,7 @@ final class UsageStore: ObservableObject {
     @Published private(set) var loading: Set<String> = []
 
     nonisolated static let allProviders: [UsageProvider] = [
-        ClaudeProvider(), CodexProvider(), GeminiProvider(), DKProvider(), SeaProvider(), SystemProvider(),
+        ClaudeProvider(), CodexProvider(), GeminiProvider(), AntigravityProvider(), DKProvider(), SeaProvider(), SystemProvider(),
     ]
     private let all = UsageStore.allProviders
     private let queue = DispatchQueue(label: "odois-monitor.load", qos: .utility)

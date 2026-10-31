@@ -11,6 +11,8 @@ struct UsageCardView: View {
 
     /// Embutido no notch: sem vidro nem margem própria, o fundo é do notch.
     var embedded = false
+    /// Largura total; no notch acompanha a largura do formato aberto (mais abas = mais largo).
+    var width: CGFloat = CardMetrics.width
 
     static let width = CardMetrics.width
 
@@ -35,7 +37,7 @@ struct UsageCardView: View {
             }
         }
         .padding(CardMetrics.padding)
-        .frame(width: Self.width)
+        .frame(width: width)
 
         if embedded {
             inner

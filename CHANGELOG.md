@@ -2,6 +2,16 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/). A versão atual fica em `VERSION`.
 
+## [0.5.0] — 2026-10-31
+
+### Adicionado
+- **Antigravity CLI (`agy`)**, quando instalada: consumo lido dos bancos SQLite de `~/.gemini/antigravity-cli/conversations` (um por conversa; o uso de cada geração vem no protobuf do passo), com modelo e pasta do projeto. Processos `agy` entram na lista de processos.
+- **Tarefas: abrir no Dashboard** — clicar no título da tarefa (na lista ou no cronômetro) abre a página dela no navegador padrão (`/timesheet/projects/<slug>/tasks/<número>`, com o endereço da credencial da `sea`). No modo barra, cada tarefa do submenu tem *Iniciar* e *Abrir no navegador*.
+- **Tarefas recolhíveis por projeto**; a escolha fica salva.
+
+### Alterado
+- No notch, o card acompanha a largura do formato aberto: com muitas abas a margem lateral continua igual às demais.
+
 ## [0.4.0] — 2026-10-31
 
 ### Adicionado

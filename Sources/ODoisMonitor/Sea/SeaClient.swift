@@ -16,6 +16,11 @@ struct SeaTask: Identifiable, Equatable, Codable, Hashable {
 
     var isInProgress: Bool { statusId == Self.inProgress }
     var title: String { "#\(number) \(subject.trimmingCharacters(in: .whitespaces))" }
+
+    /// Página da tarefa no Dashboard: `<base>/timesheet/projects/<slug>/tasks/<número>`.
+    func url(base: URL) -> URL {
+        base.appendingPathComponent("timesheet/projects/\(projectSlug)/tasks/\(number)")
+    }
 }
 
 struct SeaActivityType: Equatable {
@@ -51,10 +56,11 @@ final class SeaClient: Sendable {
 
     // MARK: - Leitura
 
-    func userId() throws -> Int {
+    /// Usuário logado e o endereço do Dashboard da credencial (para montar links).
+    func whoami() throws -> (id: Int, base: URL?) {
         let data = try json(["auth", "whoami", "--json"])
         guard let id = (data["data"] as? [String: Any])?["id"] as? Int else { throw SeaError.unexpected("whoami") }
-        return id
+        return (id, (data["url"] as? String).flatMap(URL.init(string:)))
     }
 
     /// Projetos em que a pessoa está alocada de 30 dias atrás a 30 dias à frente.

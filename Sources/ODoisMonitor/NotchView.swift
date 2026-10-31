@@ -245,7 +245,10 @@ struct NotchView: View {
             .padding(.top, NotchMetrics.tabTop)
             .frame(height: NotchMetrics.tabTop + NotchMetrics.tabIcon, alignment: .bottom)
 
-            UsageCardView(store: store, selection: selection, embedded: true)
+            UsageCardView(
+                store: store, selection: selection, embedded: true,
+                width: NotchMetrics.expandedWidth(g, store.items.count) - NotchMetrics.ear * 2
+            )
         }
         .padding(.horizontal, NotchMetrics.ear)
     }

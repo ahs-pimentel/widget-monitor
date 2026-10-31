@@ -173,6 +173,7 @@ extension AppDelegate: NSMenuDelegate {
             sub.addItem(header)
             sub.addItem(taskAction(t.isRunning ? "Pausar" : "Retomar", #selector(seaToggle(_:)), t.task.id))
             sub.addItem(taskAction("Finalizar e registrar…", #selector(seaFinish(_:)), t.task.id))
+            sub.addItem(taskAction("Abrir no navegador", #selector(seaOpen(_:)), t.task.id))
             sub.addItem(taskAction("Descartar…", #selector(seaDiscard(_:)), t.task.id))
             sub.addItem(.separator())
         }
@@ -183,8 +184,12 @@ extension AppDelegate: NSMenuDelegate {
             sub.addItem(empty)
         }
         for task in free {
-            let entry = taskAction("▶ \(task.title)", #selector(seaToggle(_:)), task.id)
+            let entry = NSMenuItem(title: task.title, action: nil, keyEquivalent: "")
             entry.toolTip = task.projectName + (task.isInProgress ? " · em andamento" : " · não iniciado")
+            let actions = NSMenu()
+            actions.addItem(taskAction("▶ Iniciar cronômetro", #selector(seaToggle(_:)), task.id))
+            actions.addItem(taskAction("Abrir no navegador", #selector(seaOpen(_:)), task.id))
+            entry.submenu = actions
             sub.addItem(entry)
         }
         sub.addItem(.separator())
@@ -209,6 +214,9 @@ extension AppDelegate: NSMenuDelegate {
     @objc private func seaFinish(_ sender: NSMenuItem) { SeaStore.shared.finish(sender.tag) }
     @objc private func seaDiscard(_ sender: NSMenuItem) { SeaStore.shared.discard(sender.tag) }
     @objc private func seaRefresh() { SeaStore.shared.refresh() }
+    @objc private func seaOpen(_ sender: NSMenuItem) {
+        if let task = seaTask(sender.tag) { SeaStore.shared.open(task) }
+    }
 
     @objc private func confirmStop(_ sender: NSMenuItem) {
         let pid = pid_t(sender.tag)

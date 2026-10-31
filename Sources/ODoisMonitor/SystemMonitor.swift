@@ -294,13 +294,19 @@ private final class Sampler: @unchecked Sendable {
         return (groups.values.sorted { $0.memory > $1.memory }, list)
     }
 
-    private static let cliNames = ["claude", "codex", "gemini", "dk"]
+    private static let cliNames = ["claude", "codex", "gemini", "agy", "dk"]
+    /// Executável → id do provider, quando diferem.
+    private static let providerIds = ["agy": "antigravity"]
     private static let scriptMarkers: [(String, String)] = [
         ("@anthropic-ai/claude-code", "claude"), ("@openai/codex", "codex"),
         ("@google/gemini-cli", "gemini"), ("ai-dk-cli", "dk"),
     ]
 
     private func classify(_ pid: pid_t) -> String? {
+        rawClassify(pid).map { Self.providerIds[$0] ?? $0 }
+    }
+
+    private func rawClassify(_ pid: pid_t) -> String? {
         var buffer = [CChar](repeating: 0, count: Int(MAXPATHLEN) * 4)
         guard proc_pidpath(pid, &buffer, UInt32(buffer.count)) > 0 else { return nil }
         let path = String(cString: buffer)
@@ -310,7 +316,7 @@ private final class Sampler: @unchecked Sendable {
         let isScriptHost = name == "node" || name == "bun"
         // Binários instalados por link (ex.: /opt/homebrew/bin/claude → …/versions/x.y.z):
         // o caminho real não tem o nome da CLI, mas o argv[0] tem.
-        let mayBeLinked = Self.cliNames.contains { $0 != "dk" && lower.contains($0) }
+        let mayBeLinked = Self.cliNames.contains { $0 != "dk" && $0 != "agy" && lower.contains($0) }
         guard isScriptHost || mayBeLinked else { return nil }
         let args = arguments(of: pid)
         let invoked = (args.split(separator: " ").first.map(String.init) ?? "")

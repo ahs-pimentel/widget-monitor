@@ -78,7 +78,7 @@ struct SeaTasksCardView: View {
         VStack(alignment: .leading, spacing: 6) {
             HStack(alignment: .firstTextBaseline) {
                 VStack(alignment: .leading, spacing: 1) {
-                    Text(t.task.title).font(.system(size: 12, weight: .semibold)).lineLimit(1)
+                    taskLink(t.task, font: .system(size: 12, weight: .semibold))
                     Text(t.task.projectName).font(.system(size: 10)).foregroundStyle(.secondary).lineLimit(1)
                 }
                 Spacer(minLength: 6)
@@ -127,12 +127,30 @@ struct SeaTasksCardView: View {
     private var list: some View {
         let free = sea.tasks.filter { sea.timers[$0.id] == nil }
         if !free.isEmpty {
-            let groups = Dictionary(grouping: free, by: \.projectName).sorted { $0.key < $1.key }
-            VStack(alignment: .leading, spacing: 10) {
-                ForEach(groups, id: \.key) { project, tasks in
+            let groups = Dictionary(grouping: free, by: \.projectSlug)
+                .map { (slug: $0.key, name: $0.value[0].projectName, tasks: $0.value) }
+                .sorted { $0.name < $1.name }
+            VStack(alignment: .leading, spacing: 8) {
+                ForEach(groups, id: \.slug) { group in
+                    let open = !sea.collapsed.contains(group.slug)
                     VStack(alignment: .leading, spacing: 4) {
-                        SectionTitle(project, detail: "\(tasks.count)")
-                        ForEach(tasks) { row($0) }
+                        Button {
+                            withAnimation(.easeOut(duration: 0.2)) { sea.toggleCollapsed(group.slug) }
+                        } label: {
+                            HStack(spacing: 4) {
+                                Image(systemName: "chevron.right")
+                                    .font(.system(size: 8, weight: .bold))
+                                    .foregroundStyle(.secondary)
+                                    .rotationEffect(.degrees(open ? 90 : 0))
+                                SectionTitle(group.name, detail: "\(group.tasks.count)")
+                            }
+                            .contentShape(Rectangle())
+                        }
+                        .buttonStyle(.plain)
+                        if open {
+                            ForEach(group.tasks) { row($0) }
+                                .transition(.opacity)
+                        }
                     }
                 }
             }
@@ -143,15 +161,28 @@ struct SeaTasksCardView: View {
         }
     }
 
+    /// Título da tarefa que abre a página dela no Dashboard (navegador padrão).
+    private func taskLink(_ task: SeaTask, font: Font) -> some View {
+        Button { sea.open(task) } label: {
+            Text(task.title)
+                .font(font)
+                .lineLimit(1).truncationMode(.tail)
+                .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .onHover { inside in
+            if inside { NSCursor.pointingHand.push() } else { NSCursor.pop() }
+        }
+        .help("Abrir no Dashboard")
+    }
+
     private func row(_ task: SeaTask) -> some View {
         HStack(spacing: 8) {
             Circle()
                 .fill(task.isInProgress ? Color.blue : Color.gray.opacity(0.6))
                 .frame(width: 6, height: 6)
                 .help(task.isInProgress ? "Em andamento" : "Não iniciado")
-            Text(task.title)
-                .font(.system(size: 11))
-                .lineLimit(1).truncationMode(.tail)
+            taskLink(task, font: .system(size: 11))
             Spacer(minLength: 4)
             if sea.busy.contains(task.id) {
                 ProgressView().controlSize(.mini)

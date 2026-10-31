@@ -33,6 +33,11 @@ final class SeaStore: ObservableObject {
 
     let client = SeaClient.shared
     private var userId: Int?
+    /// Endereço do Dashboard informado pela credencial.
+    @Published private(set) var baseURL: URL?
+    /// Projetos recolhidos no card (por slug), salvos entre aberturas.
+    @Published private(set) var collapsed: Set<String> =
+        Set(UserDefaults.standard.stringArray(forKey: "seaCollapsedProjects") ?? [])
     private var refreshTimer: Timer?
     private let queue = DispatchQueue(label: "odois-monitor.sea", qos: .userInitiated)
     private static let timersKey = "seaTimers"
@@ -57,10 +62,11 @@ final class SeaStore: ObservableObject {
     func refresh() {
         guard isAvailable, !loading else { return }
         loading = true
-        let client = client, known = userId
+        let client = client, known = userId, knownBase = baseURL
         queue.async {
             do {
-                let user = try known ?? client.userId()
+                let me = try known.map { ($0, knownBase) } ?? client.whoami()
+                let user = me.0
                 var all: [SeaTask] = []
                 for project in try client.projects(user: user) {
                     all += (try? client.openTasks(project: project.slug, name: project.name, user: user)) ?? []
@@ -68,6 +74,7 @@ final class SeaStore: ObservableObject {
                 let sorted = all.sorted { ($0.isInProgress ? 0 : 1, $0.projectName, $0.number) < ($1.isInProgress ? 0 : 1, $1.projectName, $1.number) }
                 Task { @MainActor in
                     self.userId = user
+                    self.baseURL = me.1 ?? self.baseURL
                     self.tasks = sorted
                     self.error = nil
                     self.updatedAt = Date()
@@ -80,6 +87,17 @@ final class SeaStore: ObservableObject {
                 }
             }
         }
+    }
+
+    func toggleCollapsed(_ slug: String) {
+        if collapsed.contains(slug) { collapsed.remove(slug) } else { collapsed.insert(slug) }
+        UserDefaults.standard.set(Array(collapsed), forKey: "seaCollapsedProjects")
+    }
+
+    /// Abre a tarefa no navegador padrão.
+    func open(_ task: SeaTask) {
+        guard let base = baseURL else { return }
+        NSWorkspace.shared.open(task.url(base: base))
     }
 
     // MARK: - Cronômetro
