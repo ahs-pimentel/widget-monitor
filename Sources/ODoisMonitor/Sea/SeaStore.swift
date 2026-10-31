@@ -46,6 +46,8 @@ final class SeaStore: ObservableObject {
     @Published private(set) var baseURL: URL?
     /// Conta logada na `sea` (nome · e-mail).
     @Published private(set) var account: String?
+    /// Posição no ranking anual (nil se a pessoa não aparece ou sem permissão).
+    @Published private(set) var ranking: SeaRanking?
     /// Projetos recolhidos no card (por slug), salvos entre aberturas.
     @Published private(set) var collapsed: Set<String> =
         Set(UserDefaults.standard.stringArray(forKey: "seaCollapsedProjects") ?? [])
@@ -126,9 +128,11 @@ final class SeaStore: ObservableObject {
                 for project in try client.projects(user: user) {
                     all += (try? client.openTasks(project: project.slug, name: project.name, user: user)) ?? []
                 }
+                let ranking = try? client.ranking(user: user)
                 let sorted = all.sorted { ($0.isInProgress ? 0 : 1, $0.projectName, $0.number) < ($1.isInProgress ? 0 : 1, $1.projectName, $1.number) }
                 Task { @MainActor in
                     self.userId = user
+                    if let ranking { self.ranking = ranking }
                     self.baseURL = me.1 ?? self.baseURL
                     self.account = me.2 ?? self.account
                     self.tasks = sorted

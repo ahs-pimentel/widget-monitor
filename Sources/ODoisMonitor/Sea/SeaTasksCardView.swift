@@ -28,6 +28,7 @@ struct SeaTasksCardView: View {
                     .foregroundStyle(.green)
                     .transition(.opacity)
             }
+            rankingStrip
             hero
             pausedTimers
             notificationsBox
@@ -44,22 +45,12 @@ struct SeaTasksCardView: View {
     // MARK: - Cabeçalho
 
     private var header: some View {
-        HStack(alignment: .top, spacing: 10) {
-            if showHeaderIcon {
-                RoundedRectangle(cornerRadius: 7, style: .continuous)
-                    .fill(SeaStyle.hero)
-                    .frame(width: 24, height: 24)
-                    .overlay(Image(systemName: "timer").font(.system(size: 12, weight: .bold)).foregroundStyle(.white))
-            }
-            VStack(alignment: .leading, spacing: 3) {
-                Text("Tarefas").font(.system(size: 13, weight: .semibold))
-                if let account = sea.account {
-                    // Só o nome; o e-mail fica no tooltip (o card é estreito).
-                    Label(account.components(separatedBy: " · ").first ?? account, systemImage: "person.crop.circle")
-                        .font(.system(size: 10)).foregroundStyle(.secondary)
-                        .lineLimit(1).truncationMode(.tail)
-                        .help("Conta logada na CLI sea: \(account)")
-                }
+        let name = sea.account?.components(separatedBy: " · ").first
+        return HStack(alignment: .center, spacing: 10) {
+            UserAvatar(name: name, size: 36)
+                .help(sea.account.map { "Conta logada na CLI sea: \($0)" } ?? "")
+            VStack(alignment: .leading, spacing: 4) {
+                Text(name ?? "Tarefas").font(.system(size: 13, weight: .semibold)).lineLimit(1)
                 counters
             }
             Spacer(minLength: 4)
@@ -79,6 +70,64 @@ struct SeaTasksCardView: View {
             .foregroundStyle(.secondary)
             .help("Atualizar do Dashboard")
         }
+    }
+
+    // MARK: - Ranking
+
+    @ViewBuilder
+    private var rankingStrip: some View {
+        if let r = sea.ranking {
+            HStack(spacing: 10) {
+                ZStack {
+                    Circle().fill(LinearGradient(
+                        colors: [Color(red: 1, green: 0.82, blue: 0.35), Color(red: 0.95, green: 0.6, blue: 0.15)],
+                        startPoint: .top, endPoint: .bottom
+                    ))
+                    Image(systemName: "trophy.fill").font(.system(size: 12, weight: .bold)).foregroundStyle(.white)
+                }
+                .frame(width: 28, height: 28)
+                .shadow(color: .orange.opacity(0.35), radius: 4, y: 2)
+
+                VStack(alignment: .leading, spacing: 3) {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text("\(r.position)º")
+                            .font(.system(size: 18, weight: .heavy, design: .rounded))
+                        Text("de \(r.total)").font(.system(size: 10)).foregroundStyle(.secondary)
+                        Spacer(minLength: 4)
+                        Text("\(Self.points(r.score)) pts")
+                            .font(.system(size: 13, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                    }
+                    Text(rankingHint(r))
+                        .font(.system(size: 10, weight: .medium))
+                        .foregroundStyle(r.gap == nil ? Color.orange : Color.secondary)
+                        .lineLimit(1)
+                    Meter(value: r.leaderScore > 0 ? r.score / r.leaderScore : 0, color: .orange, height: 4)
+                        .help("Pontuação geral de \(String(r.year)) · líder com \(Self.points(r.leaderScore)) pts")
+                }
+            }
+            .padding(CardMetrics.boxPadding)
+            .background(
+                RoundedRectangle(cornerRadius: CardMetrics.boxRadius, style: .continuous)
+                    .fill(LinearGradient(
+                        colors: [Color.orange.opacity(0.14), Color.orange.opacity(0.04)],
+                        startPoint: .leading, endPoint: .trailing
+                    ))
+            )
+        }
+    }
+
+    private func rankingHint(_ r: SeaRanking) -> String {
+        guard let gap = r.gap, let next = r.nextPosition else { return "Você lidera o ranking 🎉" }
+        let tie = r.tied > 0 ? "Empatado com \(r.tied) · " : ""
+        return tie + "+\(Self.points(gap)) pts para o \(next)º"
+    }
+
+    private static func points(_ v: Double) -> String {
+        let f = NumberFormatter()
+        f.locale = Locale(identifier: "pt_BR")
+        f.maximumFractionDigits = v.rounded() == v ? 0 : 1
+        return f.string(from: NSNumber(value: v)) ?? "\(Int(v))"
     }
 
     @ViewBuilder

@@ -39,6 +39,20 @@ struct SeaNotification: Identifiable, Equatable, Hashable {
     }
 }
 
+/// Posição da pessoa no ranking anual do Dashboard.
+struct SeaRanking: Equatable {
+    let year: Int
+    let position: Int
+    let total: Int
+    let score: Double
+    let leaderScore: Double
+    /// Outras pessoas com a mesma pontuação.
+    let tied: Int
+    /// Pontos que faltam para o próximo patamar de pontuação e a posição que ele dá.
+    let gap: Double?
+    let nextPosition: Int?
+}
+
 struct SeaActivityType: Equatable {
     let id: Int
     let label: String
@@ -132,6 +146,30 @@ final class SeaClient: Sendable {
                 createdAt: ISODate.parse(row["created_at"])
             )
         }
+    }
+
+    func ranking(user: Int) throws -> SeaRanking? {
+        let data = try json(["ops", "ranking-summary", "--json"])
+        guard let body = data["data"] as? [String: Any],
+              let rows = body["ranking"] as? [[String: Any]] else { return nil }
+        let entries: [(position: Int, score: Double, user: Int)] = rows.compactMap { row in
+            guard let position = row["position"] as? Int,
+                  let id = (row["user"] as? [String: Any])?["id"] as? Int else { return nil }
+            return (position, (row["total_score"] as? NSNumber)?.doubleValue ?? 0, id)
+        }
+        guard let me = entries.first(where: { $0.user == user }) else { return nil }
+        let higher = entries.filter { $0.score > me.score }
+        let nextScore = higher.map(\.score).min()
+        return SeaRanking(
+            year: body["year"] as? Int ?? Calendar.current.component(.year, from: Date()),
+            position: me.position,
+            total: entries.count,
+            score: me.score,
+            leaderScore: entries.map(\.score).max() ?? me.score,
+            tied: entries.filter { $0.score == me.score && $0.user != user }.count,
+            gap: nextScore.map { $0 - me.score },
+            nextPosition: nextScore.flatMap { s in higher.filter { $0.score == s }.map(\.position).min() }
+        )
     }
 
     // MARK: - Escrita

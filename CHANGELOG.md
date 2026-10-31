@@ -2,6 +2,12 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/). A versão atual fica em `VERSION`.
 
+## [0.8.0] — 2026-10-31
+
+### Adicionado
+- **Avatar no card de Tarefas Sea**: a foto da conta do macOS (local, sem rede; o Dashboard não expõe avatar pela API), com anel em gradiente; sem foto, as iniciais.
+- **Ranking**: posição no ranking anual (`sea ops ranking-summary`), pontuação geral do ano (`total_score`, soma de todos os critérios — a mesma da página de ranking), empates, quantos pontos faltam para o próximo patamar e barra comparando com o líder.
+
 ## [0.7.0] — 2026-10-31
 
 ### Alterado
