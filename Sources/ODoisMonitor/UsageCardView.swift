@@ -12,7 +12,7 @@ struct UsageCardView: View {
     /// Embutido no notch: sem vidro nem margem própria, o fundo é do notch.
     var embedded = false
 
-    static let width: CGFloat = 300
+    static let width = CardMetrics.width
 
     var body: some View {
         let inner = Group {
@@ -32,7 +32,7 @@ struct UsageCardView: View {
                 )
             }
         }
-        .padding(embedded ? 4 : 16)
+        .padding(CardMetrics.padding)
         .frame(width: Self.width)
 
         if embedded {
@@ -57,7 +57,7 @@ struct ProviderCardView: View {
     private var tint: Color { Color(nsColor: item.provider.tint) }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 16) {
+        VStack(alignment: .leading, spacing: CardMetrics.spacing) {
             header
             if let snap {
                 limits(snap)
@@ -78,9 +78,9 @@ struct ProviderCardView: View {
 
     private var header: some View {
         HStack(spacing: 10) {
-            if showHeaderIcon { ProviderIcon(item: item, size: 30) }
-            VStack(alignment: .leading, spacing: 2) {
-                Text(item.provider.name).font(.system(size: 15, weight: .semibold))
+            if showHeaderIcon { ProviderIcon(item: item, size: 24) }
+            VStack(alignment: .leading, spacing: 1) {
+                Text(item.provider.name).font(.system(size: 13, weight: .semibold))
                 HStack(spacing: 6) {
                     ActivityLabel(last: snap?.lastActivity)
                     if loading { ProgressView().controlSize(.mini) }
@@ -104,14 +104,14 @@ struct ProviderCardView: View {
             .map { Attention(value: $0.usedPercent / 100, label: $0.label, resetsAt: $0.resetsAt) }
             .sorted { $0.value > $1.value }
         if !rows.isEmpty || snap.blockEndsAt != nil {
-            VStack(alignment: .leading, spacing: 12) {
+            VStack(alignment: .leading, spacing: 10) {
                 ForEach(rows, id: \.label) { LimitRow(attention: $0) }
                 if let tokens = snap.blockTokens, let end = snap.blockEndsAt {
                     block(tokens: tokens, end: end)
                 }
             }
-            .padding(12)
-            .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.primary.opacity(0.06)))
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .modifier(InsetBox())
         }
     }
 
@@ -125,7 +125,7 @@ struct ProviderCardView: View {
                 Text("estimado").font(.system(size: 10)).foregroundStyle(.secondary)
                 Spacer()
                 Text(Format.tokens(tokens))
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
                     .monospacedDigit()
             }
             Meter(value: elapsed, color: tint, height: 7)
@@ -139,22 +139,22 @@ struct ProviderCardView: View {
     @ViewBuilder
     private func today(_ snap: UsageSnapshot) -> some View {
         let t = snap.today
-        VStack(alignment: .leading, spacing: 8) {
+        VStack(alignment: .leading, spacing: 6) {
             SectionTitle("Hoje", detail: snap.topModel)
             if t.total == 0 {
                 Text("Nenhum uso hoje")
-                    .font(.system(size: 20, weight: .semibold, design: .rounded))
+                    .font(.system(size: 15, weight: .semibold, design: .rounded))
                     .foregroundStyle(.secondary)
             } else {
                 HStack(alignment: .firstTextBaseline, spacing: 6) {
                     Text(Format.tokens(t.total))
-                        .font(.system(size: 30, weight: .bold, design: .rounded))
+                        .font(.system(size: 24, weight: .bold, design: .rounded))
                         .contentTransition(.numericText())
-                    Text("tokens").font(.system(size: 13, weight: .medium)).foregroundStyle(.secondary)
+                    Text("tokens").font(.system(size: 12, weight: .medium)).foregroundStyle(.secondary)
                     Spacer()
                     if let cost = snap.costToday {
                         Text(Format.usd(cost))
-                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .font(.system(size: 13, weight: .semibold, design: .rounded))
                             .foregroundStyle(.green)
                     }
                 }
@@ -163,10 +163,9 @@ struct ProviderCardView: View {
                 SegmentBar(segments: [
                     Segment(label: "Entrada", value: t.input, color: .blue),
                     Segment(label: "Saída", value: t.output, color: .orange),
-                    Segment(label: "Cache gravado", value: t.cacheWrite, color: .teal),
+                    Segment(label: "Cache novo", value: t.cacheWrite, color: .teal),
                     Segment(label: "Cache lido", value: t.cacheRead, color: .gray.opacity(0.55)),
                 ])
-                .padding(.top, 2)
             }
         }
     }
@@ -179,15 +178,15 @@ struct ProviderCardView: View {
         let average = snap.daily.reduce(0, +) / 7
         let detail = Format.tokens(snap.week.total) + " · média " + Format.tokens(average) + "/dia"
             + (snap.costWeek.map { " · " + Format.usd($0) } ?? "")
-        return VStack(alignment: .leading, spacing: 8) {
+        return VStack(alignment: .leading, spacing: 6) {
             SectionTitle("Últimos 7 dias", detail: detail)
-            HStack(alignment: .bottom, spacing: 6) {
+            HStack(alignment: .bottom, spacing: 5) {
                 ForEach(0..<7, id: \.self) { i in
                     let isToday = i == 6
-                    VStack(spacing: 4) {
-                        RoundedRectangle(cornerRadius: 4, style: .continuous)
+                    VStack(spacing: 3) {
+                        RoundedRectangle(cornerRadius: 3, style: .continuous)
                             .fill(isToday ? AnyShapeStyle(tint.gradient) : AnyShapeStyle(tint.opacity(0.35)))
-                            .frame(height: max(3, 46 * CGFloat(snap.daily[i]) / CGFloat(maxValue)))
+                            .frame(height: max(3, 30 * CGFloat(snap.daily[i]) / CGFloat(maxValue)))
                             .help("\(labels[i]): \(Format.tokens(snap.daily[i]))")
                         Text(labels[i])
                             .font(.system(size: 9, weight: isToday ? .bold : .regular))
@@ -196,7 +195,7 @@ struct ProviderCardView: View {
                     .frame(maxWidth: .infinity)
                 }
             }
-            .frame(height: 62, alignment: .bottom)
+            .frame(height: 44, alignment: .bottom)
         }
     }
 
@@ -205,22 +204,41 @@ struct ProviderCardView: View {
     /// Quantas sessões o card lista (as mais recentes).
     static let sessionLimit = 3
 
+    /// Recolhida por padrão; a escolha vale para todas as CLIs e também muda pelo menu.
+    @AppStorage(Self.sessionsKey) private var sessionsExpanded = false
+    static let sessionsKey = "sessionsExpanded"
+
     @ViewBuilder
     private func sessions(_ snap: UsageSnapshot) -> some View {
         if !snap.sessions.isEmpty {
             let shown = Array(snap.sessions.prefix(Self.sessionLimit))
             let maxTokens = max(shown.map(\.tokens.total).max() ?? 1, 1)
-            VStack(alignment: .leading, spacing: 10) {
-                SectionTitle("Sessões recentes", detail: "\(snap.sessions.count) em 7 dias")
-                ForEach(shown) { session in
-                    sessionRow(session, share: Double(session.tokens.total) / Double(maxTokens))
+            VStack(alignment: .leading, spacing: 8) {
+                Button {
+                    withAnimation(.easeOut(duration: 0.2)) { sessionsExpanded.toggle() }
+                } label: {
+                    HStack(spacing: 4) {
+                        SectionTitle("Sessões recentes", detail: "\(snap.sessions.count) em 7 dias")
+                        Image(systemName: "chevron.right")
+                            .font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                            .rotationEffect(.degrees(sessionsExpanded ? 90 : 0))
+                    }
+                    .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                if sessionsExpanded {
+                    ForEach(shown) { session in
+                        sessionRow(session, share: Double(session.tokens.total) / Double(maxTokens))
+                    }
+                    .transition(.opacity)
                 }
             }
         }
     }
 
     private func sessionRow(_ s: SessionUsage, share: Double) -> some View {
-        VStack(alignment: .leading, spacing: 4) {
+        VStack(alignment: .leading, spacing: 3) {
             HStack(alignment: .firstTextBaseline) {
                 if Activity.isActive(s.last) {
                     Circle().fill(Color.green).frame(width: 6, height: 6)

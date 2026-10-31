@@ -37,15 +37,16 @@ enum NotchMetrics {
     static let wingIcon: CGFloat = 18
     static let wingSpacing: CGFloat = 6
     static let wingPadding: CGFloat = 12
-    static let tabIcon: CGFloat = 34
-    static let tabSpacing: CGFloat = 14
-    static let tabTop: CGFloat = 8
-    static let minExpandedWidth: CGFloat = 372
+    static let tabIcon: CGFloat = 30
+    static let tabSpacing: CGFloat = 8
+    static let tabTop: CGFloat = 6
+    /// Aberto, o notch tem a largura do card (mais as orelhas), não a da faixa fechada.
+    static let minExpandedWidth: CGFloat = CardMetrics.width + ear * 2
     /// Altura da janela: comporta o notch expandido com folga.
     static let windowHeight: CGFloat = 900
 
     /// Largura mínima da asa: cabe o histórico de CPU, a barra de RAM e o total de tokens.
-    static let minWing: CGFloat = 112
+    static let minWing: CGFloat = 128
 
     static func wing(_ count: Int) -> CGFloat {
         let n = CGFloat(max(count, 1))
@@ -59,8 +60,8 @@ enum NotchMetrics {
     /// Aberto, há uma aba a mais: a visão geral, antes das CLIs.
     static func expandedWidth(_ g: NotchGeometry, _ count: Int) -> CGFloat {
         let tabs = CGFloat(count + 1)
-        let row = tabs * tabIcon + (tabs - 1) * tabSpacing + 32
-        return max(minExpandedWidth, collapsedWidth(g, count), row)
+        let row = tabs * tabIcon + (tabs - 1) * tabSpacing + (CardMetrics.padding + ear) * 2
+        return max(minExpandedWidth, g.notchWidth + ear * 2 + 24, row)
     }
 
     /// Abas do notch aberto, na ordem em que aparecem.
@@ -164,6 +165,16 @@ struct NotchView: View {
             // Processamento e memória em miniatura e, ao lado, o total de tokens do dia —
             // ou o limite que está perto de estourar, que é o que importa ver sem abrir.
             HStack(spacing: 6) {
+                if activeSessions.total > 0 {
+                    HStack(spacing: 3) {
+                        Circle().fill(Color.green).frame(width: 5, height: 5)
+                        Text("\(activeSessions.total)")
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                    }
+                    .foregroundStyle(.green)
+                    .help(activeSessions.summary)
+                }
                 CollapsedSystemMeters(monitor: monitor)
                 if let (name, warning) = topWarning {
                     HStack(spacing: 3) {
@@ -193,7 +204,7 @@ struct NotchView: View {
         VStack(spacing: 0) {
             Color.clear.frame(height: g.notchHeight)
             HStack(spacing: NotchMetrics.tabSpacing) {
-                OverviewIcon(size: 26)
+                OverviewIcon(size: 24)
                     .frame(width: NotchMetrics.tabIcon, height: NotchMetrics.tabIcon)
                     .background(
                         RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -202,7 +213,7 @@ struct NotchView: View {
                     .scaleEffect(selection.id == OverviewCardView.id ? 1.06 : 1)
                 ForEach(store.items) { item in
                     let selected = selection.id == item.id
-                    ProviderIcon(item: item, size: 24, active: isActive(item.id), ring: ring(for: item.id))
+                    ProviderIcon(item: item, size: 22, active: isActive(item.id), ring: ring(for: item.id))
                         .frame(width: NotchMetrics.tabIcon, height: NotchMetrics.tabIcon)
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -215,8 +226,6 @@ struct NotchView: View {
             .frame(height: NotchMetrics.tabTop + NotchMetrics.tabIcon, alignment: .bottom)
 
             UsageCardView(store: store, selection: selection, embedded: true)
-                .padding(.top, 8)
-                .padding(.bottom, 16)
         }
         .padding(.horizontal, NotchMetrics.ear)
     }
@@ -231,6 +240,18 @@ struct NotchView: View {
 
     private func ring(for id: String) -> Attention? {
         id == SystemProvider.identifier ? monitor.current.attention : store.snapshots[id]?.attention
+    }
+
+    /// Sessões com resposta nos últimos 10 min, no total e por CLI (para o tooltip).
+    private var activeSessions: (total: Int, summary: String) {
+        let perCLI = store.items.compactMap { item -> (String, Int)? in
+            let n = store.snapshots[item.id]?.sessions.filter { Activity.isActive($0.last) }.count ?? 0
+            return n > 0 ? (item.provider.name, n) : nil
+        }
+        let total = perCLI.reduce(0) { $0 + $1.1 }
+        let summary = "\(total) \(total == 1 ? "sessão ativa" : "sessões ativas") (últimos 10 min)\n"
+            + perCLI.map { "\($0.0): \($0.1)" }.joined(separator: "\n")
+        return (total, summary)
     }
 
     /// O limite mais alto entre as CLIs, se passou do ponto de aviso.

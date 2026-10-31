@@ -53,7 +53,8 @@ final class NotchController {
     func place() {
         let (screen, g) = NotchGeometry.current()
         state.geometry = g
-        let width = NotchMetrics.expandedWidth(g, store.items.count) + 40
+        // O painel comporta o maior dos dois formatos (fechado pode ser mais largo que aberto).
+        let width = max(NotchMetrics.expandedWidth(g, store.items.count), NotchMetrics.collapsedWidth(g, store.items.count)) + 40
         let height = min(NotchMetrics.windowHeight, (screen?.frame.height ?? NotchMetrics.windowHeight) - 20)
         panel.setFrame(NSRect(x: g.centerX - width / 2, y: g.top - height, width: width, height: height), display: true)
     }
@@ -65,7 +66,12 @@ final class NotchController {
         let width = state.expanded ? NotchMetrics.expandedWidth(g, count) : NotchMetrics.collapsedWidth(g, count)
         let height = state.expanded ? max(state.contentHeight, g.notchHeight) : g.notchHeight
         // +2 no topo: o mouse parado na borda superior da tela também conta.
-        return NSRect(x: g.centerX - width / 2, y: g.top - height, width: width, height: height + 2)
+        let rect = NSRect(x: g.centerX - width / 2, y: g.top - height, width: width, height: height + 2)
+        guard state.expanded else { return rect }
+        // Aberto, o notch pode ficar mais estreito que a faixa fechada; a faixa continua
+        // contando como "dentro" para ele não fechar e reabrir com o mouse sobre as asas.
+        let strip = NotchMetrics.collapsedWidth(g, count)
+        return rect.union(NSRect(x: g.centerX - strip / 2, y: g.top - g.notchHeight, width: strip, height: g.notchHeight + 2))
     }
 
     private func tick() {
@@ -103,11 +109,14 @@ final class NotchController {
 
     /// Passar o mouse sobre uma aba troca a CLI mostrada no card.
     private func selectTab(at mouse: CGPoint, in rect: NSRect) {
-        let local = CGPoint(x: mouse.x - rect.minX, y: rect.maxY - 2 - mouse.y)
+        // Medido no formato aberto (o `rect` recebido inclui a faixa fechada).
+        let g = state.geometry
+        let width = NotchMetrics.expandedWidth(g, store.items.count)
+        let local = CGPoint(x: mouse.x - (g.centerX - width / 2), y: g.top - mouse.y)
         let tabs = NotchMetrics.tabIDs(store)
         let half = (NotchMetrics.tabIcon + NotchMetrics.tabSpacing) / 2
         for (i, id) in tabs.enumerated() {
-            let c = NotchMetrics.tabCenter(i, count: tabs.count, width: rect.width, notchHeight: state.geometry.notchHeight)
+            let c = NotchMetrics.tabCenter(i, count: tabs.count, width: width, notchHeight: g.notchHeight)
             if abs(local.x - c.x) <= half, abs(local.y - c.y) <= NotchMetrics.tabIcon / 2 + 4 {
                 if selection.id != id {
                     selection.id = id

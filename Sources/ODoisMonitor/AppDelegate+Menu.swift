@@ -2,7 +2,7 @@ import AppKit
 import ServiceManagement
 
 /// Menu do clique direito (barra e notch) e suas ações.
-extension AppDelegate {
+extension AppDelegate: NSMenuDelegate {
     // MARK: - Menu
 
     func makeMenu() -> NSMenu {
@@ -36,9 +36,14 @@ extension AppDelegate {
         alertsItem.state = alerts.enabled ? .on : .off
         menu.addItem(alertsItem)
         menu.addItem(item("Enviar alerta de teste", #selector(testAlert), ""))
+        let sessions = item("Mostrar sessões recentes", #selector(toggleSessions), "")
+        sessions.state = UserDefaults.standard.bool(forKey: ProviderCardView.sessionsKey) ? .on : .off
+        menu.addItem(sessions)
         let login = item("Abrir ao iniciar sessão", #selector(toggleLogin), "")
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(login)
+        menu.addItem(.separator())
+        menu.addItem(processesMenuItem())
         menu.addItem(.separator())
         let about = NSMenuItem(title: "oDois Monitor \(AppInfo.versionLabel)", action: nil, keyEquivalent: "")
         about.isEnabled = false
@@ -109,6 +114,60 @@ extension AppDelegate {
     }
 
     @objc private func testAlert() { alerts.sendTest() }
+
+    // MARK: - Processos
+
+    /// Submenu com os processos das CLIs; escolher um pede confirmação para parar.
+    private func processesMenuItem() -> NSMenuItem {
+        let parent = NSMenuItem(title: "Processos das CLIs", action: nil, keyEquivalent: "")
+        let sub = NSMenu()
+        sub.delegate = self
+        parent.submenu = sub
+        return parent
+    }
+
+    /// Preenche o submenu de processos na hora em que abre (a lista muda a cada 2 s).
+    func menuNeedsUpdate(_ sub: NSMenu) {
+        sub.removeAllItems()
+        let list = SystemMonitor.shared.cliProcesses
+        if list.isEmpty {
+            let empty = NSMenuItem(title: "Nenhuma CLI rodando", action: nil, keyEquivalent: "")
+            empty.isEnabled = false
+            sub.addItem(empty)
+        }
+        let names = Dictionary(uniqueKeysWithValues: store.items.map { ($0.id, $0.provider.name) })
+        for p in list {
+            let title = [names[p.cli] ?? p.cli, "PID \(p.pid)", p.project, p.background ? "2º plano" : nil, Bytes.format(p.memory)]
+                .compactMap { $0 }.joined(separator: " · ")
+            let entry = NSMenuItem(title: title, action: #selector(confirmStop(_:)), keyEquivalent: "")
+            entry.target = self
+            entry.tag = Int(p.pid)
+            sub.addItem(entry)
+        }
+    }
+
+    @objc private func confirmStop(_ sender: NSMenuItem) {
+        let pid = pid_t(sender.tag)
+        let alert = NSAlert()
+        alert.messageText = "Parar o processo \(pid)?"
+        alert.informativeText = sender.title + "\n\n\"Parar\" pede para encerrar (SIGTERM); \"Forçar\" encerra na hora (SIGKILL)."
+        alert.addButton(withTitle: "Parar")
+        alert.addButton(withTitle: "Forçar")
+        alert.addButton(withTitle: "Cancelar")
+        NSApp.activate(ignoringOtherApps: true)
+        switch alert.runModal() {
+        case .alertFirstButtonReturn: SystemMonitor.shared.stop(pid)
+        case .alertSecondButtonReturn: SystemMonitor.shared.stop(pid, force: true)
+        default: break
+        }
+    }
+
+    /// No modo barra o card não recebe clique; o menu abre e fecha as sessões.
+    @objc private func toggleSessions() {
+        let key = ProviderCardView.sessionsKey
+        UserDefaults.standard.set(!UserDefaults.standard.bool(forKey: key), forKey: key)
+        rebuildMenu()
+    }
 
     @objc private func quit() { NSApp.terminate(nil) }
 }

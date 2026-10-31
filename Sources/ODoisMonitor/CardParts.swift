@@ -1,5 +1,27 @@
 import SwiftUI
 
+/// Medidas únicas dos cards: a mesma margem em todos os lados e o mesmo respiro entre seções.
+enum CardMetrics {
+    /// Largura total do card, margens incluídas.
+    static let width: CGFloat = 276
+    /// Margem interna, igual nos quatro lados (barra e notch).
+    static let padding: CGFloat = 14
+    /// Espaço entre seções.
+    static let spacing: CGFloat = 12
+    /// Margem das caixas internas (limites, sistema).
+    static let boxPadding: CGFloat = 10
+    static let boxRadius: CGFloat = 10
+}
+
+/// Caixa de fundo apagado usada para agrupar (limites, resumo do sistema).
+struct InsetBox: ViewModifier {
+    func body(content: Content) -> some View {
+        content
+            .padding(CardMetrics.boxPadding)
+            .background(RoundedRectangle(cornerRadius: CardMetrics.boxRadius, style: .continuous).fill(Color.primary.opacity(0.06)))
+    }
+}
+
 /// Título de seção dos cards: rótulo em versalete à esquerda, detalhe opcional à direita.
 struct SectionTitle: View {
     let title: String
@@ -53,7 +75,7 @@ struct LimitRow: View {
                 Text(attention.label).font(.system(size: 12, weight: .medium))
                 Spacer()
                 Text(attention.percent)
-                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .font(.system(size: 13, weight: .bold, design: .rounded))
                     .foregroundStyle(attention.color)
                     .monospacedDigit()
             }

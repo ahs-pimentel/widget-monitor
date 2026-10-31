@@ -2,6 +2,22 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/). A versão atual fica em `VERSION`.
 
+## [0.3.0] — 2026-10-31
+
+### Adicionado
+- **Processos das CLIs um a um** (card Sistema): PID, projeto, há quanto tempo roda, CPU e memória; os sem terminal aparecem como **2º plano** (abertos por app, agente ou daemon).
+- **Parar processo**: dois cliques (o primeiro arma, o segundo envia SIGTERM); se não sair em 3 s, vira **Forçar** (SIGKILL). Antes do sinal o app confere pelo horário de início que o PID ainda é o mesmo processo. No modo barra, pelo submenu *Processos das CLIs* do clique direito.
+- **Sessões ativas no notch fechado**: contador verde das sessões com resposta nos últimos 10 min; o tooltip mostra por CLI.
+- Visão geral mostra quantos processos de CLI estão rodando e quantos em 2º plano.
+
+### Alterado
+- **Card mais compacto e com margens consistentes**: medidas centralizadas em `CardMetrics` (mesma margem nos quatro lados, no card da barra e no notch); tipografia e gráficos menores.
+- No notch, o formato aberto tem a largura do card em vez de herdar a largura da faixa fechada (que deixava margens laterais bem maiores que a inferior).
+- **Sessões recentes recolhíveis** (recolhidas por padrão); também alternam pelo menu, para o modo barra.
+
+### Corrigido
+- O painel do notch passa a comportar o maior dos dois formatos (fechado ou aberto), sem cortar as asas.
+
 ## [0.2.0] — 2026-10-31
 
 Redesenho com foco no que o usuário precisa ver primeiro.

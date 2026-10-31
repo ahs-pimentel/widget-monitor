@@ -12,7 +12,7 @@ struct OverviewCardView: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: CardMetrics.spacing) {
             header
             VStack(spacing: 0) {
                 ForEach(Array(sortedProviders.enumerated()), id: \.element.id) { index, item in
@@ -39,7 +39,7 @@ struct OverviewCardView: View {
         let active = providers.filter { Activity.isActive(store.snapshots[$0.id]?.lastActivity) }.count
         return HStack(alignment: .firstTextBaseline) {
             VStack(alignment: .leading, spacing: 2) {
-                Text("oDois Monitor").font(.system(size: 15, weight: .semibold))
+                Text("oDois Monitor").font(.system(size: 13, weight: .semibold))
                 Text(active == 0 ? "Nenhuma CLI em uso agora" : "\(active) \(active == 1 ? "CLI em uso" : "CLIs em uso") agora")
                     .font(.system(size: 11))
                     .foregroundStyle(active == 0 ? Color.secondary : Color.green)
@@ -47,7 +47,7 @@ struct OverviewCardView: View {
             Spacer()
             VStack(alignment: .trailing, spacing: 0) {
                 Text(Format.tokens(total))
-                    .font(.system(size: 22, weight: .bold, design: .rounded))
+                    .font(.system(size: 18, weight: .bold, design: .rounded))
                     .contentTransition(.numericText())
                 Text("tokens hoje").font(.system(size: 10)).foregroundStyle(.secondary)
             }
@@ -57,9 +57,9 @@ struct OverviewCardView: View {
     private func row(_ item: UsageStore.Item) -> some View {
         let snap = store.snapshots[item.id]
         let attention = snap?.attention
-        return VStack(alignment: .leading, spacing: 6) {
+        return VStack(alignment: .leading, spacing: 5) {
             HStack(spacing: 10) {
-                ProviderIcon(item: item, size: 24, active: Activity.isActive(snap?.lastActivity))
+                ProviderIcon(item: item, size: 22, active: Activity.isActive(snap?.lastActivity))
                 VStack(alignment: .leading, spacing: 1) {
                     Text(item.provider.name).font(.system(size: 12, weight: .semibold))
                     Text(Activity.text(snap?.lastActivity))
@@ -83,16 +83,38 @@ struct OverviewCardView: View {
                         .foregroundStyle(attention.color)
                         .fixedSize()
                 }
-                .padding(.leading, 34)
+                .padding(.leading, 32)
                 .help(attention.resetsAt.map { "Reinicia \(Format.until($0)) · \(Format.time($0))" } ?? "")
             }
         }
-        .padding(.vertical, 8)
+        .padding(.vertical, 6)
     }
 
     private var system: some View {
         let s = monitor.current
-        return HStack(spacing: 14) {
+        let procs = monitor.cliProcesses
+        let background = procs.filter(\.background).count
+        return VStack(alignment: .leading, spacing: 8) {
+            systemGauges(s)
+            if !procs.isEmpty {
+                HStack(spacing: 4) {
+                    Image(systemName: "terminal").font(.system(size: 9))
+                    Text("\(procs.count) \(procs.count == 1 ? "processo" : "processos") de CLI")
+                    if background > 0 {
+                        Text("· \(background) em 2º plano").foregroundStyle(.orange)
+                    }
+                    Spacer()
+                    Text("ver em Sistema").foregroundStyle(.tertiary)
+                }
+                .font(.system(size: 10))
+                .foregroundStyle(.secondary)
+            }
+        }
+        .modifier(InsetBox())
+    }
+
+    private func systemGauges(_ s: SystemSample) -> some View {
+        HStack(spacing: 14) {
             gauge("CPU", s.cpu, .blue, "\(Int((s.cpu * 100).rounded()))%")
             gauge("RAM", s.ramFraction, s.attention.color == .green ? .purple : s.attention.color,
                   "\(Int((s.ramFraction * 100).rounded()))%")
@@ -106,8 +128,6 @@ struct OverviewCardView: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .padding(12)
-        .background(RoundedRectangle(cornerRadius: 12, style: .continuous).fill(Color.primary.opacity(0.06)))
     }
 
     private func gauge(_ label: String, _ value: Double, _ color: Color, _ detail: String) -> some View {

@@ -43,6 +43,24 @@ struct ProcessUsage: Identifiable, Equatable {
     var memory: UInt64 = 0
 }
 
+/// Um processo de CLI de LLM, com o que é preciso para reconhecê-lo e pará-lo.
+struct CLIProcess: Identifiable, Equatable {
+    let pid: pid_t
+    let cli: String
+    var cpu: Double = 0
+    var memory: UInt64 = 0
+    /// Início do processo: confere que o PID ainda é o mesmo antes de enviar um sinal.
+    let started: Date?
+    /// Pasta em que roda (o projeto).
+    let directory: String?
+    /// Sem terminal: aberto por um app, um agente ou um daemon (segundo plano).
+    let background: Bool
+    let parent: pid_t
+    var id: pid_t { pid }
+
+    var project: String? { directory.map { ($0 as NSString).lastPathComponent } }
+}
+
 /// Lê CPU, RAM, pressão de memória e GPU a cada 2 s, com histórico de 2 min.
 @MainActor
 final class SystemMonitor: ObservableObject {
@@ -52,6 +70,10 @@ final class SystemMonitor: ObservableObject {
     @Published private(set) var current = SystemSample()
     @Published private(set) var history: [SystemSample] = []
     @Published private(set) var processes: [ProcessUsage] = []
+    /// Processos das CLIs um a um (segundo plano primeiro, depois por memória).
+    @Published private(set) var cliProcesses: [CLIProcess] = []
+    /// PIDs que já receberam SIGTERM e ainda não saíram.
+    @Published private(set) var stopping: [pid_t: Date] = [:]
 
     private let sampler = Sampler()
     private let queue = DispatchQueue(label: "odois-monitor.system", qos: .utility)
@@ -67,7 +89,7 @@ final class SystemMonitor: ObservableObject {
     private func tick() {
         queue.async { [sampler] in
             let sample = sampler.sample()
-            let procs = sampler.llmProcesses()
+            let (procs, list) = sampler.llmProcesses()
             Task { @MainActor in
                 self.current = sample
                 self.history.append(sample)
@@ -75,8 +97,53 @@ final class SystemMonitor: ObservableObject {
                     self.history.removeFirst(self.history.count - Self.historySize)
                 }
                 self.processes = procs
+                self.cliProcesses = list
+                self.stopping = self.stopping.filter { pid, _ in list.contains { $0.pid == pid } }
             }
         }
+    }
+}
+
+extension SystemMonitor {
+    /// Envia SIGTERM (ou SIGKILL com `force`) a um processo de CLI listado.
+    /// Recusa se o PID não estiver na lista ou se, pelo horário de início, já for outro processo.
+    @discardableResult
+    func stop(_ pid: pid_t, force: Bool = false) -> Bool {
+        guard let p = cliProcesses.first(where: { $0.pid == pid }),
+              let started = p.started, ProcessProbe.startTime(pid) == started else { return false }
+        guard kill(pid, force ? SIGKILL : SIGTERM) == 0 else { return false }
+        if !force { stopping[pid] = Date() }
+        return true
+    }
+
+    /// Recebeu SIGTERM há mais de 3 s e continua vivo: vale oferecer "Forçar".
+    func needsForce(_ pid: pid_t, now: Date = Date()) -> Bool {
+        guard let at = stopping[pid] else { return false }
+        return now.timeIntervalSince(at) > 3
+    }
+}
+
+/// Leituras pontuais de um processo (libproc), seguras em qualquer fila.
+enum ProcessProbe {
+    static func bsdInfo(_ pid: pid_t) -> proc_bsdinfo? {
+        var info = proc_bsdinfo()
+        let size = Int32(MemoryLayout<proc_bsdinfo>.size)
+        return proc_pidinfo(pid, PROC_PIDTBSDINFO, 0, &info, size) == size ? info : nil
+    }
+
+    static func startTime(_ pid: pid_t) -> Date? {
+        guard let b = bsdInfo(pid) else { return nil }
+        return Date(timeIntervalSince1970: TimeInterval(b.pbi_start_tvsec) + TimeInterval(b.pbi_start_tvusec) / 1e6)
+    }
+
+    static func directory(_ pid: pid_t) -> String? {
+        var info = proc_vnodepathinfo()
+        let size = Int32(MemoryLayout<proc_vnodepathinfo>.size)
+        guard proc_pidinfo(pid, PROC_PIDVNODEPATHINFO, 0, &info, size) == size else { return nil }
+        let path = withUnsafeBytes(of: info.pvi_cdir.vip_path) { raw in
+            String(decoding: raw.prefix { $0 != 0 }, as: UTF8.self)
+        }
+        return path.isEmpty || path == "/" ? nil : path
     }
 }
 
@@ -182,15 +249,16 @@ private final class Sampler: @unchecked Sendable {
 
     /// Agrupa os processos por CLI. Executáveis com o nome da CLI contam direto; processos
     /// `node`/`bun` são identificados pelos argumentos (pacote da CLI no caminho do script).
-    func llmProcesses() -> [ProcessUsage] {
+    func llmProcesses() -> ([ProcessUsage], [CLIProcess]) {
         let count = proc_listallpids(nil, 0)
-        guard count > 0 else { return [] }
+        guard count > 0 else { return ([], []) }
         var pids = [pid_t](repeating: 0, count: Int(count) + 32)
         let n = proc_listallpids(&pids, Int32(pids.count * MemoryLayout<pid_t>.size))
         let now = Date()
         let elapsed = previousProcDate.map { now.timeIntervalSince($0) } ?? 0
         var times: [pid_t: UInt64] = [:]
         var groups: [String: ProcessUsage] = [:]
+        var list: [CLIProcess] = []
 
         for pid in pids.prefix(Int(max(n, 0))) where pid > 0 {
             guard let cli = classify(pid) else { continue }
@@ -199,17 +267,31 @@ private final class Sampler: @unchecked Sendable {
             guard proc_pidinfo(pid, PROC_PIDTASKINFO, 0, &info, size) == size else { continue }
             let cpuNs = (info.pti_total_user + info.pti_total_system) * timebase.numer / timebase.denom
             times[pid] = cpuNs
+            var cpu = 0.0
+            if elapsed > 0, let prev = previousProcTimes[pid], cpuNs >= prev {
+                cpu = Double(cpuNs - prev) / 1e9 / elapsed * 100
+            }
             var g = groups[cli] ?? ProcessUsage(id: cli)
             g.count += 1
             g.memory += info.pti_resident_size
-            if elapsed > 0, let prev = previousProcTimes[pid], cpuNs >= prev {
-                g.cpu += Double(cpuNs - prev) / 1e9 / elapsed * 100
-            }
+            g.cpu += cpu
             groups[cli] = g
+
+            let bsd = ProcessProbe.bsdInfo(pid)
+            // e_tdev = NODEV (todos os bits ligados) quando o processo não tem terminal.
+            let tty = bsd?.e_tdev ?? UInt32.max
+            list.append(CLIProcess(
+                pid: pid, cli: cli, cpu: cpu, memory: info.pti_resident_size,
+                started: ProcessProbe.startTime(pid),
+                directory: ProcessProbe.directory(pid),
+                background: tty == UInt32.max || tty == 0,
+                parent: pid_t(bsd?.pbi_ppid ?? 0)
+            ))
         }
         previousProcTimes = times
         previousProcDate = now
-        return groups.values.sorted { $0.memory > $1.memory }
+        list.sort { ($0.background ? 0 : 1, $1.memory) < ($1.background ? 0 : 1, $0.memory) }
+        return (groups.values.sorted { $0.memory > $1.memory }, list)
     }
 
     private static let cliNames = ["claude", "codex", "gemini", "dk"]
