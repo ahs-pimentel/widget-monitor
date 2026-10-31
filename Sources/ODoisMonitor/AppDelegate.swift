@@ -19,6 +19,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     var dragging = false
     var cancellables = Set<AnyCancellable>()
 
+    /// Itens da barra, na ordem: visão geral e depois as CLIs.
+    var barIDs: [String] { NotchMetrics.tabIDs(store) }
+
     enum Keys {
         static let origin = "barOrigin"
         static let orientation = "barOrientation"
@@ -111,7 +114,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func dockGeometry() -> (edge: ScreenEdge, shown: NSRect, area: NSRect, full: NSRect)? {
         guard snapToEdge, let edge = dockedEdge,
               let screen = dockedScreen ?? bar.screen ?? NSScreen.main else { return nil }
-        let size = BarMetrics.size(count: store.items.count, orientation: barState.orientation)
+        let size = BarMetrics.size(count: barIDs.count, orientation: barState.orientation)
         let shown = EdgeSnap.shownFrame(size: size, edge: edge, center: dockCenter, area: screen.visibleFrame)
         return (edge, shown, screen.visibleFrame, screen.frame)
     }
@@ -304,7 +307,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         host.sizingOptions = []
         bar.contentView = host
 
-        let size = BarMetrics.size(count: store.items.count, orientation: barState.orientation)
+        let size = BarMetrics.size(count: barIDs.count, orientation: barState.orientation)
         bar.setFrame(NSRect(origin: initialOrigin(for: size), size: size), display: true)
         bar.orderFrontRegardless()
     }
@@ -322,7 +325,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func resizeBar() {
         guard let bar else { return }
         if isDocked { return placeDocked(animate: true) }
-        let size = BarMetrics.size(count: store.items.count, orientation: barState.orientation)
+        let size = BarMetrics.size(count: barIDs.count, orientation: barState.orientation)
         var frame = bar.frame
         // Mantém o canto superior esquerdo fixo ao mudar de tamanho.
         frame.origin.y += frame.height - size.height
@@ -354,9 +357,9 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     func mouseMoved(_ point: CGPoint?) {
         guard !dragging else { return }
         guard let point,
-              let i = BarMetrics.index(at: point, count: store.items.count, orientation: barState.orientation)
+              let i = BarMetrics.index(at: point, count: barIDs.count, orientation: barState.orientation)
         else { return setHovered(nil) }
-        setHovered(store.items[i].id)
+        setHovered(barIDs[i])
     }
 
     func setHovered(_ id: String?, immediate: Bool = false) {
@@ -412,14 +415,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     /// Coloca o card ao lado do ícone em foco, do lado com mais espaço na tela.
     func layoutCard() {
         guard let card, let id = selection.id,
-              let index = store.items.firstIndex(where: { $0.id == id }) else { return }
+              let index = barIDs.firstIndex(of: id) else { return }
         let size = cardHost.sizeThatFits(in: CGSize(
             width: UsageCardView.width + BarMetrics.inset * 2,
             height: 2000
         ))
         guard size.width > 0, size.height > 0 else { return }
         let screen = (bar.screen ?? NSScreen.main)?.visibleFrame ?? .zero
-        let local = BarMetrics.center(of: index, count: store.items.count, orientation: barState.orientation)
+        let local = BarMetrics.center(of: index, count: barIDs.count, orientation: barState.orientation)
         let anchor = CGPoint(x: bar.frame.minX + local.x, y: bar.frame.minY + local.y)
         // 8 pt visíveis entre a cápsula e o card (os dois têm margem transparente `inset`).
         let gap: CGFloat = 8 - BarMetrics.inset

@@ -1,0 +1,28 @@
+# Changelog
+
+Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/). A versão atual fica em `VERSION`.
+
+## [0.2.0] — 2026-10-31
+
+Redesenho com foco no que o usuário precisa ver primeiro.
+
+### Adicionado
+- **Visão geral**: card com todas as CLIs e o sistema; é a primeira aba do notch (abre por padrão) e o primeiro item da barra. CLIs com limite crítico aparecem no topo.
+- **Anel de status nos ícones** (barra e notch): limite mais alto de cada CLI e, no item Sistema, a RAM colorida pela pressão de memória.
+- **Aviso no notch fechado**: quando um limite passa de 80%, o percentual (com a cor da faixa) toma o lugar do total de tokens.
+- Ícone do app, gerado com o GPT.
+- Versão no menu e no `Info.plist`, lida de `VERSION`; número de build = número de commits.
+
+### Alterado
+- Card da CLI reorganizado: limites primeiro, depois o uso de hoje, a semana e as sessões.
+- Os quatro quadros de entrada/saída/cache viraram uma barra de composição com legenda (mostra quanto do total é cache).
+- Sem uso no dia, o card diz "Nenhum uso hoje" em vez de uma grade de zeros.
+- Cabeçalho mostra o estado de uso ("Em uso agora", "Último uso há 3 h") no lugar de "Atualizado agora".
+- Bloco de 5 h do Claude mostra o tempo decorrido do bloco.
+- Semana com média diária e o dia de hoje em destaque.
+- Nomes de pasta gerados a partir do pedido (ex.: tarefas do Codex) aparecem como frase.
+- No notch aberto o ícone da CLI não se repete no cabeçalho.
+
+## [0.1.0] — 2026-10-31
+
+Primeira versão: barra flutuante e modo notch com o consumo de Claude Code, Codex, Gemini CLI e DK lido dos logs locais, card do sistema (CPU, RAM, GPU, pressão de memória), alertas por notificação e modos `--snapshot`, `--alerts`, `--bench` e `--test-alert`.

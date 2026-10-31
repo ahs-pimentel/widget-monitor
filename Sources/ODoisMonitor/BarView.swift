@@ -53,6 +53,7 @@ final class BarState: ObservableObject {
 struct BarView: View {
     @ObservedObject var store: UsageStore
     @ObservedObject var state: BarState
+    @ObservedObject var monitor = SystemMonitor.shared
 
     var body: some View {
         let hovered = state.hovered
@@ -61,14 +62,15 @@ struct BarView: View {
             : AnyLayout(VStackLayout(spacing: BarMetrics.spacing))
 
         layout {
-            if store.items.isEmpty {
-                Image(systemName: "questionmark.circle")
-                    .font(.system(size: 20))
-                    .frame(width: BarMetrics.item, height: BarMetrics.item)
-                    .help("Nenhuma CLI de LLM encontrada")
-            }
+            OverviewIcon(size: 28)
+                .frame(width: BarMetrics.item, height: BarMetrics.item)
+                .background {
+                    Circle().fill(Color.primary.opacity(hovered == OverviewCardView.id ? 0.12 : 0))
+                }
+                .scaleEffect(hovered == OverviewCardView.id ? 1.12 : 1)
+                .animation(.spring(response: 0.25, dampingFraction: 0.7), value: hovered)
             ForEach(store.items) { item in
-                ProviderIcon(item: item, size: 30, active: isActive(item.id))
+                ProviderIcon(item: item, size: 28, active: isActive(item.id), ring: ring(for: item.id))
                     .frame(width: BarMetrics.item, height: BarMetrics.item)
                     .background {
                         Circle()
@@ -85,8 +87,12 @@ struct BarView: View {
 
     /// Ponto verde quando houve resposta nos últimos 10 minutos.
     private func isActive(_ id: String) -> Bool {
-        guard let last = store.snapshots[id]?.lastActivity else { return false }
-        return Date().timeIntervalSince(last) < 600
+        Activity.isActive(store.snapshots[id]?.lastActivity)
+    }
+
+    /// Anel do ícone: limite mais alto da CLI, ou a RAM no item Sistema.
+    private func ring(for id: String) -> Attention? {
+        id == SystemProvider.identifier ? monitor.current.attention : store.snapshots[id]?.attention
     }
 }
 
@@ -94,6 +100,8 @@ struct ProviderIcon: View {
     let item: UsageStore.Item
     let size: CGFloat
     var active = false
+    /// Anel de progresso em volta do ícone (limite de uso ou RAM).
+    var ring: Attention?
 
     var body: some View {
         ZStack(alignment: .bottomTrailing) {
@@ -123,6 +131,20 @@ struct ProviderIcon: View {
                 }
             }
             .frame(width: size, height: size)
+            .overlay {
+                if let ring {
+                    let d = size + 9
+                    ZStack {
+                        Circle().stroke(Color.primary.opacity(0.12), lineWidth: 2.5)
+                        Circle()
+                            .trim(from: 0, to: ring.value)
+                            .stroke(ring.color, style: StrokeStyle(lineWidth: 2.5, lineCap: .round))
+                            .rotationEffect(.degrees(-90))
+                    }
+                    .frame(width: d, height: d)
+                    .help("\(ring.label) \(ring.percent)")
+                }
+            }
 
             if active {
                 Circle()

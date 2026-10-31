@@ -56,8 +56,16 @@ enum NotchMetrics {
         g.notchWidth + wing(count) * 2 + ear * 2
     }
 
+    /// Aberto, há uma aba a mais: a visão geral, antes das CLIs.
     static func expandedWidth(_ g: NotchGeometry, _ count: Int) -> CGFloat {
-        max(minExpandedWidth, collapsedWidth(g, count))
+        let tabs = CGFloat(count + 1)
+        let row = tabs * tabIcon + (tabs - 1) * tabSpacing + 32
+        return max(minExpandedWidth, collapsedWidth(g, count), row)
+    }
+
+    /// Abas do notch aberto, na ordem em que aparecem.
+    @MainActor static func tabIDs(_ store: UsageStore) -> [String] {
+        [OverviewCardView.id] + store.items.map(\.id)
     }
 
     /// Centro da aba `index` medido a partir do canto superior esquerdo do formato expandido.
@@ -153,14 +161,26 @@ struct NotchView: View {
 
             Color.clear.frame(width: g.notchWidth)
 
-            // Processamento e memória em miniatura, seguidos do total de tokens do dia.
+            // Processamento e memória em miniatura e, ao lado, o total de tokens do dia —
+            // ou o limite que está perto de estourar, que é o que importa ver sem abrir.
             HStack(spacing: 6) {
                 CollapsedSystemMeters(monitor: monitor)
-                Text(Format.tokens(todayTotal))
-                    .font(.system(size: 11, weight: .semibold, design: .rounded))
-                    .foregroundStyle(.white.opacity(0.85))
-                    .monospacedDigit()
-                    .lineLimit(1)
+                if let (name, warning) = topWarning {
+                    HStack(spacing: 3) {
+                        Image(systemName: "exclamationmark.triangle.fill").font(.system(size: 9))
+                        Text(warning.percent)
+                            .font(.system(size: 11, weight: .bold, design: .rounded))
+                            .monospacedDigit()
+                    }
+                    .foregroundStyle(warning.color)
+                    .help("\(name): \(warning.label.lowercased()) em \(warning.percent)")
+                } else {
+                    Text(Format.tokens(todayTotal))
+                        .font(.system(size: 11, weight: .semibold, design: .rounded))
+                        .foregroundStyle(.white.opacity(0.85))
+                        .monospacedDigit()
+                        .lineLimit(1)
+                }
             }
             .frame(width: wing)
         }
@@ -173,9 +193,16 @@ struct NotchView: View {
         VStack(spacing: 0) {
             Color.clear.frame(height: g.notchHeight)
             HStack(spacing: NotchMetrics.tabSpacing) {
+                OverviewIcon(size: 26)
+                    .frame(width: NotchMetrics.tabIcon, height: NotchMetrics.tabIcon)
+                    .background(
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
+                            .fill(Color.white.opacity(selection.id == OverviewCardView.id ? 0.16 : 0))
+                    )
+                    .scaleEffect(selection.id == OverviewCardView.id ? 1.06 : 1)
                 ForEach(store.items) { item in
                     let selected = selection.id == item.id
-                    ProviderIcon(item: item, size: 26, active: isActive(item.id))
+                    ProviderIcon(item: item, size: 24, active: isActive(item.id), ring: ring(for: item.id))
                         .frame(width: NotchMetrics.tabIcon, height: NotchMetrics.tabIcon)
                         .background(
                             RoundedRectangle(cornerRadius: 10, style: .continuous)
@@ -199,8 +226,19 @@ struct NotchView: View {
     }
 
     private func isActive(_ id: String) -> Bool {
-        guard let last = store.snapshots[id]?.lastActivity else { return false }
-        return Date().timeIntervalSince(last) < 600
+        Activity.isActive(store.snapshots[id]?.lastActivity)
+    }
+
+    private func ring(for id: String) -> Attention? {
+        id == SystemProvider.identifier ? monitor.current.attention : store.snapshots[id]?.attention
+    }
+
+    /// O limite mais alto entre as CLIs, se passou do ponto de aviso.
+    private var topWarning: (String, Attention)? {
+        store.items
+            .compactMap { item in store.snapshots[item.id]?.attention.map { (item.provider.name, $0) } }
+            .filter { $0.1.isWarning }
+            .max { $0.1.value < $1.1.value }
     }
 }
 
@@ -243,5 +281,24 @@ struct CollapsedSystemMeters: View {
                 .frame(height: max(1, Self.height * v))
         }
         .frame(width: width, height: Self.height)
+    }
+}
+
+/// Ícone da aba de visão geral.
+struct OverviewIcon: View {
+    let size: CGFloat
+
+    var body: some View {
+        RoundedRectangle(cornerRadius: size * 0.28, style: .continuous)
+            .fill(LinearGradient(
+                colors: [Color(red: 0.36, green: 0.30, blue: 0.95), Color(red: 0.58, green: 0.28, blue: 0.85)],
+                startPoint: .top, endPoint: .bottom
+            ))
+            .overlay(
+                Image(systemName: "square.grid.2x2.fill")
+                    .font(.system(size: size * 0.44, weight: .bold))
+                    .foregroundStyle(.white)
+            )
+            .frame(width: size, height: size)
     }
 }

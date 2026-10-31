@@ -90,9 +90,8 @@ final class NotchController {
     }
 
     private func expand() {
-        if selection.id == nil || !store.items.contains(where: { $0.id == selection.id }) {
-            selection.id = store.items.first?.id
-        }
+        // Abre sempre na visão geral: a pergunta ao chegar é "como está tudo?".
+        selection.id = OverviewCardView.id
         if let id = selection.id { store.refreshIfStale(id) }
         state.expanded = true
     }
@@ -105,14 +104,14 @@ final class NotchController {
     /// Passar o mouse sobre uma aba troca a CLI mostrada no card.
     private func selectTab(at mouse: CGPoint, in rect: NSRect) {
         let local = CGPoint(x: mouse.x - rect.minX, y: rect.maxY - 2 - mouse.y)
-        let count = store.items.count
+        let tabs = NotchMetrics.tabIDs(store)
         let half = (NotchMetrics.tabIcon + NotchMetrics.tabSpacing) / 2
-        for (i, item) in store.items.enumerated() {
-            let c = NotchMetrics.tabCenter(i, count: count, width: rect.width, notchHeight: state.geometry.notchHeight)
+        for (i, id) in tabs.enumerated() {
+            let c = NotchMetrics.tabCenter(i, count: tabs.count, width: rect.width, notchHeight: state.geometry.notchHeight)
             if abs(local.x - c.x) <= half, abs(local.y - c.y) <= NotchMetrics.tabIcon / 2 + 4 {
-                if selection.id != item.id {
-                    selection.id = item.id
-                    store.refreshIfStale(item.id)
+                if selection.id != id {
+                    selection.id = id
+                    store.refreshIfStale(id)
                 }
                 return
             }

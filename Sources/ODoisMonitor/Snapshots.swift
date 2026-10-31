@@ -38,16 +38,16 @@ enum Snapshots {
             barState.hovered = store.items.first?.id
             save("barra-\(suffix)", BarView(store: store, state: barState), scheme: scheme)
 
-            for item in store.items {
+            for id in NotchMetrics.tabIDs(store) {
                 let selection = CardSelection()
-                selection.id = item.id
-                save("card-\(item.id)-\(suffix)", UsageCardView(store: store, selection: selection), scheme: scheme)
+                selection.id = id
+                save("card-\(id)-\(suffix)", UsageCardView(store: store, selection: selection), scheme: scheme)
             }
         }
 
         // O notch é sempre preto; uma imagem fechado e uma por aba expandida.
         let (_, geometry) = NotchGeometry.current()
-        let notchShots: [(String, String?)] = [("notch-fechado", nil)] + store.items.map { ("notch-\($0.id)", $0.id) }
+        let notchShots: [(String, String?)] = [("notch-fechado", nil), ("notch-overview", OverviewCardView.id)] + store.items.map { ("notch-\($0.id)", $0.id) }
         for (name, expandedId) in notchShots {
             let state = NotchState()
             state.geometry = geometry

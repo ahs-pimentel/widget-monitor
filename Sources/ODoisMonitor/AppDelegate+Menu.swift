@@ -40,6 +40,9 @@ extension AppDelegate {
         login.state = SMAppService.mainApp.status == .enabled ? .on : .off
         menu.addItem(login)
         menu.addItem(.separator())
+        let about = NSMenuItem(title: "oDois Monitor \(AppInfo.versionLabel)", action: nil, keyEquivalent: "")
+        about.isEnabled = false
+        menu.addItem(about)
         menu.addItem(item("Sair", #selector(quit), "q"))
         return menu
     }
@@ -108,4 +111,14 @@ extension AppDelegate {
     @objc private func testAlert() { alerts.sendTest() }
 
     @objc private func quit() { NSApp.terminate(nil) }
+}
+
+/// Versão do app lida do Info.plist (gerado pelo build-app.sh a partir de VERSION).
+enum AppInfo {
+    static var versionLabel: String {
+        let info = Bundle.main.infoDictionary
+        guard let version = info?["CFBundleShortVersionString"] as? String else { return "(dev)" }
+        let build = info?["CFBundleVersion"] as? String
+        return "v\(version)" + (build.map { " (\($0))" } ?? "")
+    }
 }
