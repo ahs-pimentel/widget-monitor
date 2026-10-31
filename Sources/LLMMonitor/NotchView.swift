@@ -121,10 +121,10 @@ struct NotchView: View {
         VStack(spacing: 0) {
             if state.expanded {
                 expanded(g)
-                    .transition(.opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
+                    .transition(RenderMode.snapshot ? .identity : .opacity.combined(with: .scale(scale: 0.96, anchor: .top)))
             } else {
                 collapsed(g)
-                    .transition(.opacity)
+                    .transition(RenderMode.snapshot ? .identity : .opacity)
             }
         }
         .frame(width: width)

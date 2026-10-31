@@ -1,6 +1,12 @@
 import AppKit
 import SwiftUI
 
+if let i = CommandLine.arguments.firstIndex(of: "--snapshot") {
+    let path = CommandLine.arguments.count > i + 1 ? CommandLine.arguments[i + 1] : "build/snapshots"
+    MainActor.assumeIsolated { Snapshots.render(to: URL(fileURLWithPath: path)) }
+    exit(0)
+}
+
 // `LLMMonitor --bench` mede a leitura dos logs: a primeira carga e uma recarga
 // (que relê só os arquivos alterados desde a anterior).
 if CommandLine.arguments.contains("--bench") {

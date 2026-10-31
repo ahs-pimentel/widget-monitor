@@ -135,10 +135,16 @@ struct ProviderIcon: View {
     }
 }
 
+/// Desenho fora da tela (`--snapshot`): o vidro do macOS 26 só aparece numa janela
+/// visível, então nesse modo vale o material de fallback e não há transições.
+enum RenderMode {
+    nonisolated(unsafe) static var snapshot = false
+}
+
 /// Vidro do macOS 26+ quando disponível; material translúcido nas versões anteriores.
 struct GlassCapsule: ViewModifier {
     func body(content: Content) -> some View {
-        if #available(macOS 26.0, *) {
+        if #available(macOS 26.0, *), !RenderMode.snapshot {
             content.glassEffect(.regular, in: Capsule())
         } else {
             content
@@ -152,7 +158,7 @@ struct GlassCapsule: ViewModifier {
 struct GlassCard: ViewModifier {
     func body(content: Content) -> some View {
         let shape = RoundedRectangle(cornerRadius: 22, style: .continuous)
-        if #available(macOS 26.0, *) {
+        if #available(macOS 26.0, *), !RenderMode.snapshot {
             content.glassEffect(.regular, in: shape)
         } else {
             content
