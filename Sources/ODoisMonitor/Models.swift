@@ -69,6 +69,8 @@ struct RateLimit: Identifiable, Equatable, Codable {
     let label: String
     let usedPercent: Double
     let resetsAt: Date?
+    /// Quando chega a 100% no ritmo das últimas horas (preenchido pelo LimitTrend).
+    var forecast: Date? = nil
 }
 
 /// Tudo o que o card mostra para uma CLI.
@@ -96,6 +98,8 @@ struct UsageSnapshot: Equatable {
     var source: String?
     /// Sessões com atividade nos últimos 7 dias, da mais recente para a mais antiga.
     var sessions: [SessionUsage] = []
+    /// Tokens por dia nos últimos 30 dias (DailyHistory), do mais antigo até hoje.
+    var history: [Int] = []
 
     static let empty = UsageSnapshot()
 }

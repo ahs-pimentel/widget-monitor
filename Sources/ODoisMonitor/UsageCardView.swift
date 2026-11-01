@@ -113,7 +113,7 @@ struct ProviderCardView: View {
     @ViewBuilder
     private func limits(_ snap: UsageSnapshot) -> some View {
         let rows = snap.limits
-            .map { Attention(value: $0.usedPercent / 100, label: $0.label, resetsAt: $0.resetsAt) }
+            .map { Attention(value: $0.usedPercent / 100, label: $0.label, resetsAt: $0.resetsAt, forecast: $0.forecast) }
             .sorted { $0.value > $1.value }
         if !rows.isEmpty || snap.blockEndsAt != nil {
             VStack(alignment: .leading, spacing: 10) {
@@ -208,6 +208,30 @@ struct ProviderCardView: View {
                 }
             }
             .frame(height: 44, alignment: .bottom)
+            history(snap)
+        }
+    }
+
+    /// 30 dias em barras finas (o histórico cresce dia a dia desde a instalação).
+    @ViewBuilder
+    private func history(_ snap: UsageSnapshot) -> some View {
+        let days = snap.history
+        if days.count == 30, days.filter({ $0 > 0 }).count > 7 {
+            let maxValue = max(days.max() ?? 0, 1)
+            let total = days.reduce(0, +)
+            VStack(alignment: .leading, spacing: 4) {
+                SectionTitle("30 dias", detail: Format.tokens(total) + " · média " + Format.tokens(total / 30) + "/dia")
+                HStack(alignment: .bottom, spacing: 1.5) {
+                    ForEach(days.indices, id: \.self) { i in
+                        RoundedRectangle(cornerRadius: 1.5)
+                            .fill(i == days.count - 1 ? AnyShapeStyle(tint) : AnyShapeStyle(tint.opacity(0.4)))
+                            .frame(maxWidth: .infinity)
+                            .frame(height: max(2, 22 * CGFloat(days[i]) / CGFloat(maxValue)))
+                    }
+                }
+                .frame(height: 22, alignment: .bottom)
+            }
+            .padding(.top, 4)
         }
     }
 

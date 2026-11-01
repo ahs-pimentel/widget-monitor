@@ -42,6 +42,8 @@ data class Provider(
     val topModel: String? = null,
     val weekTotal: Long = 0,
     val daily: List<Long> = List(7) { 0L },
+    /** Últimos 30 dias, do mais antigo até hoje (vazio em Macs anteriores à 1.1). */
+    val history: List<Long> = emptyList(),
     val costToday: Double? = null,
     val costWeek: Double? = null,
     val limits: List<Limit> = emptyList(),
@@ -59,7 +61,7 @@ data class Tokens(
 )
 
 @Serializable
-data class Limit(val label: String, val usedPercent: Double, val resetsAt: String? = null) {
+data class Limit(val label: String, val usedPercent: Double, val resetsAt: String? = null, val forecastAt: String? = null) {
     val fraction: Float get() = (usedPercent / 100).coerceIn(0.0, 1.0).toFloat()
 }
 

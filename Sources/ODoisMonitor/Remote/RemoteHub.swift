@@ -171,9 +171,9 @@ final class RemoteHub {
                 account: snap.account, plan: snap.plan, source: snap.source,
                 active: Activity.isActive(snap.lastActivity), lastActivity: snap.lastActivity,
                 today: RemoteTokens(snap.today), messagesToday: snap.messagesToday, sessionsToday: snap.sessionsToday,
-                topModel: snap.topModel, weekTotal: snap.week.total, daily: snap.daily,
+                topModel: snap.topModel, weekTotal: snap.week.total, daily: snap.daily, history: snap.history,
                 costToday: snap.costToday, costWeek: snap.costWeek,
-                limits: snap.limits.map { RemoteLimit(label: $0.label, usedPercent: $0.usedPercent, resetsAt: $0.resetsAt) },
+                limits: snap.limits.map { RemoteLimit(label: $0.label, usedPercent: $0.usedPercent, resetsAt: $0.resetsAt, forecastAt: $0.forecast) },
                 block: snap.blockTokens.flatMap { t in snap.blockEndsAt.map { RemoteBlock(tokens: t, endsAt: $0) } },
                 sessions: snap.sessions.prefix(5).map {
                     RemoteSession(id: $0.id, project: Format.project($0.project), model: $0.model, tokens: $0.tokens.total,

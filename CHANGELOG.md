@@ -2,6 +2,15 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/). A versão atual fica em `VERSION`.
 
+## [1.1.0] — 2026-10-31
+
+### Adicionado
+- Previsão de esgotamento dos limites: "no ritmo atual esgota às 16h40", calculada pela subida do percentual nas últimas 3 horas, só quando acontece antes do limite reiniciar. Aparece no Mac, no celular e na visão geral.
+- Alerta quando faltar menos de 1 h para esgotar, no Mac e no celular.
+- Histórico de 30 dias por CLI, no Mac e no celular. Os logs só cobrem 7 dias, então o histórico cresce dia a dia.
+- Atalhos no ícone do app Android (tocar e segurar): pausar o cronômetro e iniciar as tarefas em andamento.
+- Distribuição pelo teste interno do Google Play: release assinado com a chave de upload (fora do repositório) e `scripts/publish-android.py` para publicar o AAB pela API do Play Developer, com as notas da versão tiradas deste arquivo.
+
 ## [1.0.0] — 2026-10-31
 
 ### Adicionado

@@ -82,6 +82,11 @@ struct LimitRow: View {
                     .monospacedDigit()
             }
             Meter(value: attention.value, color: attention.color, height: 7)
+            if let eta = attention.forecast {
+                Label("No ritmo atual esgota \(Format.until(eta)) · \(Format.time(eta))", systemImage: "chart.line.uptrend.xyaxis")
+                    .font(.system(size: 10, weight: .semibold))
+                    .foregroundStyle(.orange)
+            }
             if let reset = attention.resetsAt {
                 Text("Reinicia \(Format.until(reset)) · \(Format.time(reset))")
                     .font(.system(size: 10)).foregroundStyle(.secondary)

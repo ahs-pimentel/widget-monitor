@@ -32,6 +32,8 @@ struct RemoteProvider: Encodable {
     let topModel: String?
     let weekTotal: Int
     let daily: [Int]
+    /// Últimos 30 dias, do mais antigo até hoje.
+    let history: [Int]
     let costToday: Double?
     let costWeek: Double?
     let limits: [RemoteLimit]
@@ -53,6 +55,7 @@ struct RemoteLimit: Encodable {
     let label: String
     let usedPercent: Double
     let resetsAt: Date?
+    let forecastAt: Date?
 }
 
 struct RemoteBlock: Encodable {

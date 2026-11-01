@@ -72,6 +72,9 @@ fun CliDetailScreen(p: Provider, now: Instant) {
                         Text("${l.usedPercent.toInt()}%", color = Palette.severity(l.fraction), fontSize = 20.sp, fontWeight = FontWeight.Bold)
                     }
                     Meter(l.fraction, Palette.severity(l.fraction), height = 8.dp)
+                    l.forecastAt.toInstantOrNull()?.let {
+                        Text("No ritmo atual esgota ${Fmt.until(it, now)} · ${Fmt.time(it)}", color = Palette.orange, fontSize = 12.sp, fontWeight = FontWeight.SemiBold)
+                    }
                     l.resetsAt.toInstantOrNull()?.let { Text("Reinicia ${Fmt.until(it, now)} · ${Fmt.time(it)}", color = Palette.secondary, fontSize = 12.sp) }
                 }
                 p.block?.let { b ->
@@ -138,6 +141,15 @@ fun CliDetailScreen(p: Provider, now: Instant) {
             val max = (p.daily.maxOrNull() ?: 0L).coerceAtLeast(1L)
             Bars(p.daily.map { it.toFloat() / max }, tint, Modifier.fillMaxWidth().height(70.dp), highlightLast = true)
             Row { Fmt.weekdays().forEachIndexed { i, d -> Text(d, color = if (i == 6) Palette.text else Palette.secondary, fontSize = 11.sp, fontWeight = if (i == 6) FontWeight.Bold else FontWeight.Normal, modifier = Modifier.weight(1f), textAlign = androidx.compose.ui.text.style.TextAlign.Center) } }
+        }
+
+        if (p.history.size == 30 && p.history.count { it > 0 } > 7) {
+            Card {
+                val total = p.history.sum()
+                SectionTitle("30 dias", "${Fmt.tokens(total)} · média ${Fmt.tokens(total / 30)}/dia")
+                val max = (p.history.maxOrNull() ?: 0L).coerceAtLeast(1L)
+                Bars(p.history.map { it.toFloat() / max }, tint, Modifier.fillMaxWidth().height(56.dp), highlightLast = true)
+            }
         }
 
         if (p.sessions.isNotEmpty()) {

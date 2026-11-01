@@ -45,6 +45,18 @@ class ContractTest {
     }
 
     @Test
+    fun decodificaPrevisaoEHistoricoDa11() {
+        val json = """{"version":1,"providers":[{"id":"codex","name":"Codex","history":[1,2,3],
+            "limits":[{"label":"Limite semanal","usedPercent":72.5,"resetsAt":"2026-11-04T09:53:00Z","forecastAt":"2026-11-01T16:40:00Z"}]}],
+            "system":{}}"""
+        val p = decode(json).providers.single()
+        assertEquals(listOf(1L, 2L, 3L), p.history)
+        assertEquals(Instant.parse("2026-11-01T16:40:00Z"), p.limits.single().forecastAt.toInstantOrNull())
+        // Mac anterior à 1.1 (sem os campos novos) continua decodificando.
+        assertTrue(decode("""{"providers":[{"id":"x","name":"X","limits":[{"label":"L","usedPercent":10}]}]}""").providers.single().history.isEmpty())
+    }
+
+    @Test
     fun pareamentoAceitaSoHttpsETokenLongo() {
         val ok = """{"v":1,"url":"https://monitor.exemplo.com","token":"abcdefghijklmnopqrstuvwxyz012345","host":"Mac"}"""
         assertNotNull(PairingStore.parse(ok))

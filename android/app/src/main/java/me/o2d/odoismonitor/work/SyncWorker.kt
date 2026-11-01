@@ -15,6 +15,7 @@ import me.o2d.odoismonitor.R
 import me.o2d.odoismonitor.data.MonitorClient
 import me.o2d.odoismonitor.data.MonitorState
 import me.o2d.odoismonitor.data.PairingStore
+import me.o2d.odoismonitor.data.toInstantOrNull
 import me.o2d.odoismonitor.widget.MonitorWidget
 
 /** Em segundo plano: busca o estado do Mac, avisa o que é novo e atualiza o widget. */
@@ -23,6 +24,7 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
         val pairing = PairingStore(applicationContext).load() ?: return Result.success()
         val state = runCatching { MonitorClient(pairing).state() }.getOrElse { return Result.retry() }
         MonitorWidget.update(applicationContext, state)
+        me.o2d.odoismonitor.Shortcuts.update(applicationContext, state)
         notify(applicationContext, state)
         return Result.success()
     }
@@ -61,6 +63,18 @@ class SyncWorker(context: Context, params: WorkerParameters) : CoroutineWorker(c
                             if (level >= 100) "${p.name}: ${l.label.lowercase()} esgotado" else "${p.name}: ${l.label.lowercase()} em ${l.usedPercent.toInt()}%",
                             "No Mac ${state.host}.",
                         )
+                    }
+                }
+            }
+            // Previsão: esgota em menos de 1 h no ritmo atual.
+            state.providers.forEach { p ->
+                p.limits.forEach { l ->
+                    val eta = l.forecastAt.toInstantOrNull() ?: return@forEach
+                    val minutes = java.time.Duration.between(java.time.Instant.now(), eta).toMinutes()
+                    if (minutes in 0..59 && l.usedPercent < 90) {
+                        post("forecast:${p.id}:${l.label}:${l.resetsAt}", CHANNEL_ALERTS,
+                            "${p.name}: ${l.label.lowercase()} deve esgotar em $minutes min",
+                            "Está em ${l.usedPercent.toInt()}% e subindo, no Mac ${state.host}.")
                     }
                 }
             }

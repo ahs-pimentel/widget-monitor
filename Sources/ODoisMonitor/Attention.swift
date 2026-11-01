@@ -6,12 +6,15 @@ struct Attention: Equatable {
     let value: Double
     let label: String
     let resetsAt: Date?
+    /// Quando esgota no ritmo atual (só para limites que estão subindo).
+    let forecast: Date?
     var color: Color
 
-    init(value: Double, label: String, resetsAt: Date? = nil, color: Color? = nil) {
+    init(value: Double, label: String, resetsAt: Date? = nil, forecast: Date? = nil, color: Color? = nil) {
         self.value = min(max(value, 0), 1)
         self.label = label
         self.resetsAt = resetsAt
+        self.forecast = forecast
         self.color = color ?? Severity.color(value)
     }
 
@@ -31,7 +34,7 @@ extension UsageSnapshot {
     /// O limite mais alto informado pela CLI; nil se ela não informa limites.
     var attention: Attention? {
         guard let top = limits.max(by: { $0.usedPercent < $1.usedPercent }) else { return nil }
-        return Attention(value: top.usedPercent / 100, label: top.label, resetsAt: top.resetsAt)
+        return Attention(value: top.usedPercent / 100, label: top.label, resetsAt: top.resetsAt, forecast: top.forecast)
     }
 }
 

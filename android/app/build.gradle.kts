@@ -4,8 +4,14 @@ plugins {
     id("org.jetbrains.kotlin.plugin.serialization")
 }
 
+import java.util.Properties
+
 // Versão do app = VERSION da raiz do repositório (a mesma do Mac).
 val appVersion = rootProject.file("../VERSION").readText().trim()
+
+// Chave de upload da Play: fora do repositório (ODOIS_SIGNING ou ~/.config/odois-monitor/).
+val signingFile = file(System.getenv("ODOIS_SIGNING") ?: "${System.getProperty("user.home")}/.config/odois-monitor/android-signing.properties")
+val signing = Properties().apply { if (signingFile.exists()) signingFile.inputStream().use { load(it) } }
 
 android {
     namespace = "me.o2d.odoismonitor"
@@ -21,12 +27,23 @@ android {
         versionCode = appVersion.split(".").fold(0) { acc, part -> acc * 100 + (part.toIntOrNull() ?: 0) }
     }
 
+    signingConfigs {
+        if (signing.getProperty("storeFile") != null) {
+            create("upload") {
+                storeFile = file(signing.getProperty("storeFile"))
+                storePassword = signing.getProperty("storePassword")
+                keyAlias = signing.getProperty("keyAlias")
+                keyPassword = signing.getProperty("keyPassword")
+            }
+        }
+    }
+
     buildTypes {
         release {
             isMinifyEnabled = true
             proguardFiles(getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro")
-            // Assinatura de depuração até existir uma chave de release.
-            signingConfig = signingConfigs.getByName("debug")
+            // Chave de upload quando disponível; senão a de depuração (build local).
+            signingConfig = signingConfigs.findByName("upload") ?: signingConfigs.getByName("debug")
         }
     }
     compileOptions {

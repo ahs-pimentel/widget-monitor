@@ -57,6 +57,12 @@ final class UsageStore: ObservableObject {
         queue.async { [provider] in
             let snap = provider.load()
             Task { @MainActor in
+                var snap = snap
+                snap.limits = LimitTrend.apply(provider: id, limits: snap.limits)
+                if id != SystemProvider.identifier && id != SeaProvider.identifier {
+                    DailyHistory.record(provider: id, daily: snap.daily)
+                    snap.history = DailyHistory.last(30, provider: id)
+                }
                 self.snapshots[id] = snap
                 self.updatedAt[id] = Date()
                 self.loading.remove(id)

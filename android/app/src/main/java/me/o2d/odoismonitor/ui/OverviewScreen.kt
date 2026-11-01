@@ -49,6 +49,9 @@ fun OverviewScreen(state: MonitorState, now: Instant, receivedAt: Instant, openC
                     Icon(Icons.Rounded.Warning, null, tint = Palette.severity(l.fraction), modifier = Modifier.padding(end = 6.dp))
                     Text("${p.name}: ${l.label.lowercase()} em ${l.usedPercent.toInt()}%", color = Palette.severity(l.fraction), fontWeight = FontWeight.SemiBold, fontSize = 13.sp)
                 }
+                l.forecastAt.toInstantOrNull()?.let {
+                    Text("No ritmo atual esgota ${Fmt.until(it, now)} (${Fmt.time(it)})", color = Palette.orange, fontSize = 12.sp)
+                }
             }
         }
 

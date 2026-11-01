@@ -81,7 +81,24 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         if (Build.VERSION.SDK_INT >= 33) notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
         val repo = MonitorRepository.get(this)
+        handleShortcut(intent)
         setContent { MonitorTheme { Root(repo) } }
+    }
+
+    override fun onNewIntent(intent: android.content.Intent) {
+        super.onNewIntent(intent)
+        handleShortcut(intent)
+    }
+
+    /** Atalho do ícone: inicia ou pausa a tarefa direto (o Mac confirma devolvendo o estado). */
+    private fun handleShortcut(intent: android.content.Intent?) {
+        val id = intent?.getIntExtra(Shortcuts.EXTRA_ID, -1)?.takeIf { it > 0 } ?: return
+        val repo = MonitorRepository.get(this)
+        when (intent.action) {
+            Shortcuts.ACTION_START -> repo.act("Cronômetro iniciado") { it.startTask(id) }
+            Shortcuts.ACTION_PAUSE -> repo.act("Cronômetro pausado") { it.pauseTimer(id) }
+        }
+        intent.action = null
     }
 }
 
@@ -105,7 +122,12 @@ private fun Root(repo: MonitorRepository) {
     // Relógio de 1 s para cronômetros e "há x min".
     val now by produceState(Instant.now()) { while (true) { value = Instant.now(); delay(1_000) } }
     val context = androidx.compose.ui.platform.LocalContext.current
-    LaunchedEffect(ui.state?.generatedAt) { ui.state?.let { MonitorWidget.update(context, it) } }
+    LaunchedEffect(ui.state?.generatedAt) {
+        ui.state?.let {
+            MonitorWidget.update(context, it)
+            Shortcuts.update(context, it)
+        }
+    }
     BackHandler(enabled = cli != null) { cli = null }
 
     Scaffold(

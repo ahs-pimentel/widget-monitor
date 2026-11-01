@@ -44,6 +44,17 @@ enum AlertRules {
                     cooldown: nil
                 ))
             }
+            // Previsão: esgota em menos de 1 h no ritmo atual (um aviso por janela).
+            for limit in snap.limits {
+                guard let eta = limit.forecast, eta.timeIntervalSince(now) < 3600, limit.usedPercent < 90 else { continue }
+                let window = limit.resetsAt.map { String(Int($0.timeIntervalSince1970)) } ?? "sem-reset"
+                alerts.append(Alert(
+                    key: "forecast:\(id):\(limit.label):\(window)",
+                    title: "\(name): \(limit.label.lowercased()) deve esgotar \(Format.until(eta, now: now))",
+                    body: "Está em \(Int(limit.usedPercent.rounded()))% e subindo; no ritmo atual chega a 100% às \(Format.time(eta)).",
+                    cooldown: nil
+                ))
+            }
             for session in snap.sessions where session.lastHourTokens >= sessionTokensPerHour {
                 let project = session.project ?? "Sessão \(session.id.prefix(6))"
                 alerts.append(Alert(
