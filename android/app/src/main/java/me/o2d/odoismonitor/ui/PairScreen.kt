@@ -78,7 +78,7 @@ fun PairScreen(repo: MonitorRepository, initialError: String? = null) {
             },
             enabled = !busy,
             modifier = Modifier.fillMaxWidth().height(56.dp),
-            colors = ButtonDefaults.buttonColors(containerColor = Palette.teal),
+            colors = ButtonDefaults.buttonColors(containerColor = Palette.teal, contentColor = androidx.compose.ui.graphics.Color.White),
         ) {
             if (busy) CircularProgressIndicator(Modifier.size(22.dp), strokeWidth = 2.dp) else {
                 Icon(Icons.Rounded.QrCodeScanner, null); HGap(8.dp); Text("Ler QR code", fontWeight = FontWeight.Bold)

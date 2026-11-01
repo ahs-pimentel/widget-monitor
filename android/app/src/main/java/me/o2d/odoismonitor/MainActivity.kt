@@ -82,7 +82,12 @@ class MainActivity : ComponentActivity() {
         if (Build.VERSION.SDK_INT >= 33) notifications.launch(Manifest.permission.POST_NOTIFICATIONS)
         val repo = MonitorRepository.get(this)
         handleShortcut(intent)
-        setContent { MonitorTheme { Root(repo) } }
+        setContent {
+            MonitorTheme {
+                // Cor de texto do tema em todas as telas (a de pareamento fica fora do Scaffold).
+                androidx.compose.material3.Surface(color = Palette.background, contentColor = Palette.text) { Root(repo) }
+            }
+        }
     }
 
     override fun onNewIntent(intent: android.content.Intent) {

@@ -2,6 +2,14 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/). A versão atual fica em `VERSION`.
 
+## [1.1.1] — 2026-10-31
+
+### Adicionado
+- Logo do oDois Monitor em `assets/logo/`: horizontal para fundo escuro e claro, e só o símbolo. Em SVG com o texto convertido em curvas (SF Pro), sem depender de fonte, e PNG em 1x e 2x.
+
+### Corrigido
+- Android: título e botões da tela de pareamento saíam em preto sobre o fundo escuro. O app inteiro agora usa a cor de texto do tema.
+
 ## [1.1.0] — 2026-10-31
 
 ### Adicionado

@@ -322,7 +322,7 @@ private fun FinishSheet(t: TaskTimer, now: Instant, receivedAt: Instant, repo: M
                     }
                 },
                 modifier = Modifier.fillMaxWidth().height(52.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Palette.teal),
+                colors = ButtonDefaults.buttonColors(containerColor = Palette.teal, contentColor = Color.White),
             ) { Text("Registrar no Dashboard", fontWeight = FontWeight.Bold) }
         }
     }

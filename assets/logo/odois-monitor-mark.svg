@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <title>oDois Monitor</title>
+  <defs>
+    <linearGradient id="mcyan" x1="256" y1="106" x2="106" y2="406" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#5EE7FF"/><stop offset="1" stop-color="#1FA6E0"/></linearGradient>
+    <linearGradient id="mcoral" x1="256" y1="106" x2="406" y2="406" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#FFB27A"/><stop offset="1" stop-color="#FF5E57"/></linearGradient>
+    <linearGradient id="mring" x1="106" y1="256" x2="406" y2="256" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#5EE7FF"/><stop offset="0.5" stop-color="#C77DFF"/><stop offset="1" stop-color="#FF8A65"/></linearGradient>
+    <linearGradient id="mpulse" x1="106" y1="256" x2="406" y2="256" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#29C5F6"/><stop offset="0.55" stop-color="#FFFFFF"/><stop offset="1" stop-color="#FF7A59"/></linearGradient>
+    <linearGradient id="mbg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#2B2FD9"/><stop offset="1" stop-color="#7A2BE2"/></linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="116" fill="url(#mbg)"/>
+  <g fill="none" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M242.93 405.43 A150 150 0 0 1 242.93 106.57" stroke="url(#mcyan)" stroke-width="34"/>
+    <path d="M269.07 106.57 A150 150 0 0 1 269.07 405.43" stroke="url(#mcoral)" stroke-width="34"/>
+    <path d="M160.15 221.11 A102.00000000000001 102.00000000000001 0 0 1 351.85 221.11" stroke="url(#mring)" stroke-width="21.1" opacity="0.9"/>
+    <path d="M351.85 290.89 A102.00000000000001 102.00000000000001 0 0 1 160.15 290.89" stroke="url(#mring)" stroke-width="21.1" opacity="0.9"/>
+    <path d="M133.0 256.0 L211.0 256.0 L235.0 190.0 L268.0 313.0 L292.0 241.0 L307.0 256.0 L379.0 256.0" stroke="url(#mpulse)" stroke-width="18.7"/>
+  </g>
+</svg>
