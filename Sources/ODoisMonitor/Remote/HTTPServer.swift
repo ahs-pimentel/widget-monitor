@@ -114,17 +114,18 @@ final class HTTPServer: @unchecked Sendable {
                 let head = "HTTP/1.1 200 OK\r\nContent-Type: text/event-stream\r\nCache-Control: no-store\r\n"
                     + "X-Accel-Buffering: no\r\nConnection: keep-alive\r\n\r\n"
                 connection.send(content: Data(head.utf8), completion: .contentProcessed { _ in })
-                var open = true
+                // Lida pela main thread (quem empurra eventos) e escrita pela fila da conexão.
+                let open = AtomicFlag(true)
                 let cancel = start { chunk in
-                    guard open else { return false }
+                    guard open.value else { return false }
                     connection.send(content: Data(chunk.utf8), completion: .contentProcessed { error in
-                        if error != nil { open = false }
+                        if error != nil { open.value = false }
                     })
-                    return open
+                    return open.value
                 }
                 connection.stateUpdateHandler = { state in
                     switch state {
-                    case .failed, .cancelled: open = false; cancel()
+                    case .failed, .cancelled: open.value = false; cancel()
                     default: break
                     }
                 }
@@ -178,5 +179,18 @@ final class HTTPServer: @unchecked Sendable {
         case 429: return "Too Many Requests"
         default: return status < 400 ? "OK" : "Error"
         }
+    }
+}
+
+/// Booleano protegido por lock (compartilhado entre a fila da conexão e a main thread).
+final class AtomicFlag: @unchecked Sendable {
+    private let lock = NSLock()
+    private var stored: Bool
+
+    init(_ value: Bool) { stored = value }
+
+    var value: Bool {
+        get { lock.lock(); defer { lock.unlock() }; return stored }
+        set { lock.lock(); stored = newValue; lock.unlock() }
     }
 }

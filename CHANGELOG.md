@@ -2,6 +2,21 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/). A versão atual fica em `VERSION`.
 
+## [1.0.0] — 2026-10-31
+
+### Adicionado
+- **App Android** (`android/`, Kotlin + Jetpack Compose, Material 3, tema escuro do monitor), com os mesmos recursos do Mac via túnel da Cloudflare:
+  - **Geral**: tokens do dia, sessões ativas, aviso de limite ≥ 80%, cronômetro em andamento, CLIs ordenadas por limite e resumo do Mac.
+  - **CLIs**: lista com anel do limite e detalhe (limites, bloco de 5 h, hoje com composição, 7 dias, sessões, conta logada).
+  - **Mac**: CPU/RAM/GPU, pressão de memória com histórico, processos das CLIs com PID e *Parar*/*Forçar* (confirmação).
+  - **Tarefas**: avatar, ranking (quando a API trouxer), cronômetro em destaque (pausar, finalizar com horas/dia/atividade/comentário, descartar), pausados, notificações (abrir/lida), projetos recolhíveis com ▶.
+  - Estado ao vivo por SSE com reconexão; atualizar puxando a tela.
+  - **Widget** da tela inicial (tokens de hoje, limite mais alto, cronômetro) e **notificações** em segundo plano (limite ≥ 90%/esgotado, memória crítica, notificações do Dashboard) a cada 15 min.
+  - **Pareamento** lendo o QR code do Mac (leitor do Google Play Services, sem permissão de câmera) ou colando o código; token cifrado com AES-256-GCM por chave do Android Keystore; só HTTPS.
+  - Versão do app = `VERSION` da raiz.
+- `--remote-state-json <arquivo>` no Mac: grava o JSON de `/v1/state` (teste de contrato do Android).
+- Testes do Android (`./gradlew testDebugUnitTest`): contrato v1 com fixture anonimizada (e com o estado real via `ODOIS_STATE_JSON`), validação do pareamento e formatação.
+
 ## [0.9.0] — 2026-10-31
 
 ### Adicionado

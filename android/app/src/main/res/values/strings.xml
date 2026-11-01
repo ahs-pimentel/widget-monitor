@@ -1,0 +1,5 @@
+<resources>
+    <string name="app_name">oDois Monitor</string>
+    <string name="widget_name">oDois Monitor</string>
+    <string name="widget_description">Limites das CLIs, tokens de hoje e o cronômetro da tarefa</string>
+</resources>

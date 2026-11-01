@@ -28,3 +28,6 @@ agentdb.rvf.idmap.json
 ruvector.db
 AGENTS.md
 CLAUDE.md
+
+# Logs locais de ferramentas
+.dev/

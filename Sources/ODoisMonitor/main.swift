@@ -16,6 +16,25 @@ if CommandLine.arguments.contains("--test-alert") {
     exit(0)
 }
 
+// `ODoisMonitor --remote-state-json <arquivo>` grava o JSON de /v1/state (teste de contrato do app Android).
+if let i = CommandLine.arguments.firstIndex(of: "--remote-state-json"), i + 1 < CommandLine.arguments.count {
+    MainActor.assumeIsolated {
+        let store = UsageStore()
+        RemoteHub.shared.store = store
+        let sea = SeaStore.shared
+        let monitor = SystemMonitor.shared
+        let deadline = Date().addingTimeInterval(30)
+        while (store.snapshots.count < store.items.count || monitor.history.count < 3
+               || (sea.isAvailable && sea.updatedAt == nil)), Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.25))
+        }
+        let data = try! RemoteJSON.encoder.encode(RemoteHub.shared.state())
+        try! data.write(to: URL(fileURLWithPath: CommandLine.arguments[i + 1]))
+        print("OK: \(data.count) bytes")
+    }
+    exit(0)
+}
+
 // `ODoisMonitor --remote-selftest` sobe servidor + túnel, pareia um aparelho temporário,
 // chama a API pelo endereço público e revoga o aparelho. Nunca imprime o token.
 if CommandLine.arguments.contains("--remote-selftest") {
@@ -62,6 +81,29 @@ if CommandLine.arguments.contains("--remote-selftest") {
         call("v1/icons/claude.png")
         call("v1/avatar.png")
         call("v1/processes/1/stop", method: "POST", body: ["confirm": false])
+        // Stream ao vivo: espera o primeiro evento "state" pelo túnel.
+        if let base = publicURL {
+            var req = URLRequest(url: base.appendingPathComponent("v1/stream"), timeoutInterval: 20)
+            req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization")
+            var result = "sem evento"
+            var done = false
+            let task = Task {
+                do {
+                    let (bytes, resp) = try await URLSession.shared.bytes(for: req)
+                    let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+                    let type = (resp as? HTTPURLResponse)?.value(forHTTPHeaderField: "Content-Type") ?? "?"
+                    for try await line in bytes.lines where line.hasPrefix("data: ") {
+                        result = "\(code) · \(type) · primeiro evento com \(line.count) bytes"
+                        break
+                    }
+                } catch { result = "erro: \(error.localizedDescription)" }
+                done = true
+            }
+            let limit = Date().addingTimeInterval(20)
+            while !done, Date() < limit { RunLoop.main.run(until: Date().addingTimeInterval(0.1)) }
+            task.cancel()
+            print("GET /v1/stream →", result)
+        }
         access.revoke(device.id)
         call("v1/state")
         if wasEnabled { access.shutdown() } else { access.stop() }

@@ -1,0 +1,483 @@
+{
+ "activeSessions": 1,
+ "appVersion": "(dev)",
+ "generatedAt": "2026-11-01T00:22:30Z",
+ "host": "Mac de Exemplo",
+ "processes": [
+  {
+   "background": false,
+   "cli": "claude",
+   "cliName": "Claude Code",
+   "cpu": 4.093543226883971,
+   "directory": "/Users/exemplo/projeto-1",
+   "memory": 390823936,
+   "pid": 1000,
+   "project": "projeto-1",
+   "startedAt": "2026-10-31T22:42:19Z",
+   "stopping": false
+  },
+  {
+   "background": false,
+   "cli": "claude",
+   "cliName": "Claude Code",
+   "cpu": 1.567763266731018,
+   "directory": "/Users/exemplo/projeto-2",
+   "memory": 246104064,
+   "pid": 1001,
+   "project": "projeto-2",
+   "startedAt": "2026-10-31T17:57:06Z",
+   "stopping": false
+  }
+ ],
+ "providers": [
+  {
+   "account": "pessoa@exemplo.com",
+   "active": true,
+   "block": {
+    "endsAt": "2026-11-01T03:00:00Z",
+    "tokens": 112514863
+   },
+   "daily": [
+    6252200,
+    163756909,
+    455307984,
+    168151061,
+    415604697,
+    487275954,
+    341820398
+   ],
+   "hasIcon": true,
+   "id": "claude",
+   "lastActivity": "2026-11-01T00:22:10Z",
+   "limits": [],
+   "messagesToday": 1021,
+   "name": "Claude Code",
+   "sessions": [
+    {
+     "active": true,
+     "cost": 0,
+     "id": "sessao-1",
+     "last": "2026-11-01T00:22:10Z",
+     "messages": 297,
+     "model": "claude-opus-5-5",
+     "project": "projeto-1",
+     "tokens": 106597101
+    },
+    {
+     "active": false,
+     "cost": 0,
+     "id": "sessao-2",
+     "last": "2026-10-31T23:22:44Z",
+     "messages": 146,
+     "model": "claude-opus-5-5",
+     "project": "projeto-2",
+     "tokens": 30924617
+    },
+    {
+     "active": false,
+     "cost": 0,
+     "id": "sessao-3",
+     "last": "2026-10-31T21:37:20Z",
+     "messages": 5,
+     "model": "claude-opus-5-5",
+     "project": "projeto-3",
+     "tokens": 484747
+    },
+    {
+     "active": false,
+     "cost": 0,
+     "id": "sessao-4",
+     "last": "2026-10-31T21:08:29Z",
+     "messages": 132,
+     "model": "claude-opus-5-5",
+     "project": "projeto-4",
+     "tokens": 34729199
+    },
+    {
+     "active": false,
+     "cost": 0,
+     "id": "sessao-5",
+     "last": "2026-10-31T17:36:24Z",
+     "messages": 22,
+     "model": "claude-opus-5-5",
+     "project": "projeto-5",
+     "tokens": 2176716
+    }
+   ],
+   "sessionsToday": 10,
+   "symbol": "asterisk",
+   "tint": "#D87756",
+   "today": {
+    "cacheRead": 336674441,
+    "cacheWrite": 4003627,
+    "input": 2092,
+    "output": 1140238,
+    "reasoning": 291548,
+    "total": 341820398
+   },
+   "topModel": "claude-opus-5-5",
+   "weekTotal": 2038169203
+  },
+  {
+   "account": "pessoa@exemplo.com",
+   "active": false,
+   "daily": [
+    191026562,
+    337313689,
+    100014620,
+    1318462727,
+    1279993889,
+    1110579881,
+    223768
+   ],
+   "hasIcon": true,
+   "id": "codex",
+   "lastActivity": "2026-10-31T22:41:05Z",
+   "limits": [
+    {
+     "label": "Limite semanal",
+     "resetsAt": "2026-11-04T09:53:57Z",
+     "usedPercent": 99
+    }
+   ],
+   "messagesToday": 7,
+   "name": "Codex",
+   "plan": "prolite",
+   "sessions": [
+    {
+     "active": false,
+     "cost": 0,
+     "id": "sessao-1",
+     "last": "2026-10-31T22:41:05Z",
+     "messages": 7,
+     "model": "gpt-6.1-terra",
+     "project": "projeto-1",
+     "tokens": 223768
+    },
+    {
+     "active": false,
+     "cost": 0,
+     "id": "sessao-2",
+     "last": "2026-10-31T00:57:28Z",
+     "messages": 4484,
+     "model": "gpt-6.1-terra",
+     "project": "projeto-2",
+     "tokens": 1193182752
+    },
+    {
+     "active": false,
+     "cost": 0,
+     "id": "sessao-3",
+     "last": "2026-10-31T00:57:19Z",
+     "messages": 2,
+     "model": "codex-auto-review",
+     "project": "projeto-3",
+     "tokens": 361597
+    },
+    {
+     "active": false,
+     "cost": 0,
+     "id": "sessao-4",
+     "last": "2026-10-31T00:57:00Z",
+     "messages": 1,
+     "model": "codex-auto-review",
+     "project": "projeto-4",
+     "tokens": 168433
+    },
+    {
+     "active": false,
+     "cost": 0,
+     "id": "sessao-5",
+     "last": "2026-10-31T00:53:38Z",
+     "messages": 1,
+     "model": "codex-auto-review",
+     "project": "projeto-5",
+     "tokens": 168433
+    }
+   ],
+   "sessionsToday": 1,
+   "symbol": "chevron.left.forwardslash.chevron.right",
+   "tint": "#6B72F9",
+   "today": {
+    "cacheRead": 200576,
+    "cacheWrite": 0,
+    "input": 21869,
+    "output": 1323,
+    "reasoning": 447,
+    "total": 223768
+   },
+   "topModel": "gpt-6.1-terra",
+   "weekTotal": 4337615136
+  },
+  {
+   "active": false,
+   "daily": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    0,
+    0
+   ],
+   "hasIcon": false,
+   "id": "gemini",
+   "limits": [],
+   "messagesToday": 0,
+   "name": "Gemini CLI",
+   "note": "Os logs locais ainda não têm respostas com contagem de tokens.",
+   "sessions": [],
+   "sessionsToday": 0,
+   "symbol": "sparkle",
+   "tint": "#448CF9",
+   "today": {
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "input": 0,
+    "output": 0,
+    "reasoning": 0,
+    "total": 0
+   },
+   "weekTotal": 0
+  },
+  {
+   "active": false,
+   "daily": [
+    0,
+    0,
+    0,
+    0,
+    0,
+    26392665,
+    0
+   ],
+   "hasIcon": false,
+   "id": "antigravity",
+   "lastActivity": "2026-10-30T15:31:50Z",
+   "limits": [],
+   "messagesToday": 0,
+   "name": "Antigravity",
+   "sessions": [
+    {
+     "active": false,
+     "cost": 0,
+     "id": "sessao-1",
+     "last": "2026-10-30T15:31:50Z",
+     "messages": 213,
+     "model": "gemini-3.8-flash-n",
+     "project": "projeto-1",
+     "tokens": 26392665
+    }
+   ],
+   "sessionsToday": 0,
+   "symbol": "arrow.up.circle",
+   "tint": "#3372F2",
+   "today": {
+    "cacheRead": 0,
+    "cacheWrite": 0,
+    "input": 0,
+    "output": 0,
+    "reasoning": 0,
+    "total": 0
+   },
+   "weekTotal": 26392665
+  },
+  {
+   "account": "pessoa@exemplo.com",
+   "active": false,
+   "daily": [
+    5798318,
+    0,
+    0,
+    0,
+    0,
+    0,
+    476289
+   ],
+   "hasIcon": false,
+   "id": "dk",
+   "lastActivity": "2026-10-31T21:31:24Z",
+   "limits": [],
+   "messagesToday": 9,
+   "monogram": "DK",
+   "name": "DK",
+   "sessions": [
+    {
+     "active": false,
+     "cost": 0,
+     "id": "sessao-1",
+     "last": "2026-10-31T21:31:24Z",
+     "messages": 8,
+     "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+     "project": "projeto-1",
+     "tokens": 474442
+    },
+    {
+     "active": false,
+     "cost": 0,
+     "id": "sessao-2",
+     "last": "2026-10-31T13:33:03Z",
+     "messages": 1,
+     "model": "nvidia/nemotron-3-ultra-550b-a55b:free",
+     "project": "projeto-2",
+     "tokens": 1847
+    },
+    {
+     "active": false,
+     "cost": 0,
+     "id": "sessao-3",
+     "last": "2026-10-25T15:56:08Z",
+     "messages": 5,
+     "model": "nvidia/nemotron-3.5-super-vl:free",
+     "project": "projeto-3",
+     "tokens": 289540
+    },
+    {
+     "active": false,
+     "cost": 0,
+     "id": "sessao-4",
+     "last": "2026-10-25T15:54:55Z",
+     "messages": 53,
+     "model": "nvidia/nemotron-3.5-super-vl:free",
+     "project": "projeto-4",
+     "tokens": 5502168
+    },
+    {
+     "active": false,
+     "cost": 0,
+     "id": "sessao-5",
+     "last": "2026-10-25T15:10:49Z",
+     "messages": 2,
+     "model": "nvidia/nemotron-3.5-super-vl:free",
+     "project": "projeto-5",
+     "tokens": 3141
+    }
+   ],
+   "sessionsToday": 2,
+   "source": "via OpenRouter",
+   "symbol": "square.stack.3d.up.fill",
+   "tint": "#21B79E",
+   "today": {
+    "cacheRead": 216000,
+    "cacheWrite": 0,
+    "input": 255640,
+    "output": 4649,
+    "reasoning": 785,
+    "total": 476289
+   },
+   "topModel": "nvidia/nemotron-3-ultra-550b-a55b:free",
+   "weekTotal": 6274607
+  }
+ ],
+ "sea": {
+  "account": "Pessoa Exemplo · pessoa@exemplo.com",
+  "dashboardURL": "https://dashboard.exemplo.com",
+  "loading": false,
+  "notifications": [
+   {
+    "actor": "Alguém",
+    "body": "Alguém alterou o status de #1",
+    "createdAt": "2026-10-31T22:10:31Z",
+    "id": 1,
+    "title": "Status da tarefa alterado",
+    "url": "https://dashboard.exemplo.com/x"
+   }
+  ],
+  "ranking": {
+   "automatic": 3120.0094,
+   "badges": 1695,
+   "manual": 200,
+   "score": 3320.0094,
+   "year": 2026
+  },
+  "tasks": [
+   {
+    "busy": false,
+    "id": 1017628,
+    "inProgress": true,
+    "number": 277,
+    "projectName": "Projeto 1",
+    "projectSlug": "projeto-1",
+    "statusId": 3,
+    "subject": "Tarefa de exemplo 1",
+    "url": "https://dashboard.exemplo.com/timesheet/projects/projeto-1/tasks/277"
+   },
+   {
+    "busy": false,
+    "id": 1017415,
+    "inProgress": true,
+    "number": 224,
+    "projectName": "Projeto 2",
+    "projectSlug": "projeto-2",
+    "statusId": 3,
+    "subject": "Tarefa de exemplo 2",
+    "url": "https://dashboard.exemplo.com/timesheet/projects/projeto-2/tasks/224"
+   },
+   {
+    "busy": false,
+    "id": 1017249,
+    "inProgress": true,
+    "number": 710,
+    "projectName": "Projeto 1",
+    "projectSlug": "projeto-1",
+    "statusId": 3,
+    "subject": "Tarefa de exemplo 3",
+    "url": "https://dashboard.exemplo.com/timesheet/projects/projeto-1/tasks/710"
+   },
+   {
+    "busy": false,
+    "id": 1016605,
+    "inProgress": false,
+    "number": 709,
+    "projectName": "Projeto 2",
+    "projectSlug": "projeto-2",
+    "statusId": 2,
+    "subject": "Tarefa de exemplo 4",
+    "url": "https://dashboard.exemplo.com/timesheet/projects/projeto-2/tasks/709"
+   }
+  ],
+  "timers": [
+   {
+    "accumulated": 1200.5,
+    "elapsed": 4800.25,
+    "preferredActivityType": 1,
+    "running": true,
+    "runningSince": "2026-10-31T21:00:00Z",
+    "startedAt": "2026-10-31T20:00:00Z",
+    "task": {
+     "busy": false,
+     "id": 1017628,
+     "inProgress": true,
+     "number": 277,
+     "projectName": "Projeto 1",
+     "projectSlug": "projeto-1",
+     "statusId": 3,
+     "subject": "Tarefa de exemplo 1",
+     "url": "https://dashboard.exemplo.com/timesheet/projects/projeto-1/tasks/277"
+    }
+   }
+  ],
+  "updatedAt": "2026-11-01T00:22:29Z"
+ },
+ "system": {
+  "cpu": 0.15317011927181418,
+  "cpuHistory": [
+   0,
+   0.15384615384615385,
+   0.15317011927181418
+  ],
+  "gpu": 0.11,
+  "pressure": 0.68,
+  "pressureHistory": [
+   0.69,
+   0.68,
+   0.68
+  ],
+  "pressureLevel": "warning",
+  "ramTotal": 8589934592,
+  "ramUsed": 6367887360,
+  "swapTotal": 4294967296,
+  "swapUsed": 3507814400
+ },
+ "version": 1
+}
