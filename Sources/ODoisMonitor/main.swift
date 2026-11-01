@@ -16,6 +16,59 @@ if CommandLine.arguments.contains("--test-alert") {
     exit(0)
 }
 
+// `ODoisMonitor --remote-selftest` sobe servidor + túnel, pareia um aparelho temporário,
+// chama a API pelo endereço público e revoga o aparelho. Nunca imprime o token.
+if CommandLine.arguments.contains("--remote-selftest") {
+    MainActor.assumeIsolated {
+        let store = UsageStore()
+        RemoteHub.shared.store = store
+        let access = RemoteAccess.shared
+        let wasEnabled = access.enabled
+        access.start()
+        let deadline = Date().addingTimeInterval(25)
+        while (access.status != .online || store.snapshots.count < store.items.count), Date() < deadline {
+            RunLoop.main.run(until: Date().addingTimeInterval(0.25))
+        }
+        print("túnel:", access.status.label, "· endereço:", access.publicURL?.absoluteString ?? "-")
+        let (device, token) = access.pair(name: "autoteste")
+        let publicURL = access.publicURL
+        func call(_ path: String, method: String = "GET", auth: Bool = true, body: [String: Any]? = nil) {
+            guard let base = publicURL else { return }
+            var req = URLRequest(url: base.appendingPathComponent(path), timeoutInterval: 20)
+            req.httpMethod = method
+            if auth { req.setValue("Bearer \(token)", forHTTPHeaderField: "Authorization") }
+            if let body {
+                req.httpBody = try? JSONSerialization.data(withJSONObject: body)
+                req.setValue("application/json", forHTTPHeaderField: "Content-Type")
+            }
+            var done = false
+            URLSession.shared.dataTask(with: req) { data, resp, error in
+                let code = (resp as? HTTPURLResponse)?.statusCode ?? 0
+                var extra = ""
+                if path == "v1/state", let data, let obj = try? JSONSerialization.jsonObject(with: data) as? [String: Any] {
+                    let providers = (obj["providers"] as? [[String: Any]])?.map { $0["id"] as? String ?? "?" } ?? []
+                    let sea = obj["sea"] as? [String: Any]
+                    extra = " providers=\(providers) tasks=\((sea?["tasks"] as? [Any])?.count ?? 0) processes=\((obj["processes"] as? [Any])?.count ?? 0)"
+                }
+                print(method, "/" + path, auth ? "" : "(sem token)", "→", code, "·", data?.count ?? 0, "bytes", error.map { "· \($0.localizedDescription)" } ?? "", extra)
+                done = true
+            }.resume()
+            while !done { RunLoop.main.run(until: Date().addingTimeInterval(0.1)) }
+        }
+        call("v1/health", auth: false)
+        call("v1/state", auth: false)
+        call("v1/hello")
+        call("v1/state")
+        call("v1/icons/claude.png")
+        call("v1/avatar.png")
+        call("v1/processes/1/stop", method: "POST", body: ["confirm": false])
+        access.revoke(device.id)
+        call("v1/state")
+        if wasEnabled { access.shutdown() } else { access.stop() }
+    }
+    exit(0)
+}
+
 // `ODoisMonitor --ranking` consulta o ranking pela API (diagnóstico; nunca imprime o token).
 if CommandLine.arguments.contains("--ranking") {
     print("credencial:", SeaAPI.credential().map { "ok (\($0.url.host ?? "?"))" } ?? "não encontrada")

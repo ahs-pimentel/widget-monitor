@@ -2,6 +2,15 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/). A versão atual fica em `VERSION`.
 
+## [0.9.0] — 2026-10-31
+
+### Adicionado
+- **Acesso remoto (celular)** pelo menu *Acesso remoto*:
+  - Servidor HTTP próprio (Network.framework) só em `127.0.0.1:47862`; quem chega de fora é o túnel nomeado da Cloudflare `odois-monitor` (`https://monitor.o2d.me`), com config própria em `~/.config/odois-monitor/cloudflared.yml`. O app sobe e mantém o `cloudflared` (reinicia em 10 s se cair).
+  - API v1: `GET /v1/state` (CLIs, sistema, processos, tarefas, cronômetros, notificações, ranking), `GET /v1/stream` (SSE a cada 2 s), ícones e avatar em PNG, e ações: iniciar/pausar/finalizar (registra horas)/descartar cronômetro, tipos de atividade, marcar notificação lida, parar processo, atualizar.
+  - **Pareamento por QR code** (*Parear celular…*): um token por aparelho, só o hash SHA-256 em disco (`devices.json`, 0600), comparação em tempo constante, limite de 10 tentativas inválidas por origem a cada 5 min, revogação imediata. Descartar cronômetro e parar processo exigem `confirm: true`.
+- `--remote-selftest`: sobe servidor e túnel, pareia um aparelho temporário, chama a API pelo endereço público e revoga (nunca imprime o token).
+
 ## [0.8.1] — 2026-10-31
 
 ### Corrigido

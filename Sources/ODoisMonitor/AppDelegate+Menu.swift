@@ -44,6 +44,7 @@ extension AppDelegate: NSMenuDelegate {
         menu.addItem(login)
         menu.addItem(.separator())
         if SeaStore.shared.isAvailable { menu.addItem(tasksMenuItem()) }
+        menu.addItem(remoteMenuItem())
         menu.addItem(processesMenuItem())
         menu.addItem(.separator())
         let about = NSMenuItem(title: "oDois Monitor \(AppInfo.versionLabel)", action: nil, keyEquivalent: "")
@@ -149,6 +150,53 @@ extension AppDelegate: NSMenuDelegate {
             entry.tag = Int(p.pid)
             sub.addItem(entry)
         }
+    }
+
+    // MARK: - Acesso remoto
+
+    private func remoteMenuItem() -> NSMenuItem {
+        let access = RemoteAccess.shared
+        let parent = NSMenuItem(title: "Acesso remoto (celular)", action: nil, keyEquivalent: "")
+        let sub = NSMenu()
+        let status = NSMenuItem(title: "Status: \(access.status.label)", action: nil, keyEquivalent: "")
+        status.isEnabled = false
+        sub.addItem(status)
+        if let url = access.publicURL {
+            let address = NSMenuItem(title: url.absoluteString, action: nil, keyEquivalent: "")
+            address.isEnabled = false
+            sub.addItem(address)
+        }
+        sub.addItem(.separator())
+        let toggle = item("Ativar acesso remoto", #selector(toggleRemote), "")
+        toggle.state = access.enabled ? .on : .off
+        sub.addItem(toggle)
+        sub.addItem(item("Parear celular…", #selector(pairPhone), ""))
+        let devices = access.devices.filter { $0.lastSeenAt != nil }
+        if !devices.isEmpty {
+            sub.addItem(.separator())
+            for d in devices {
+                let entry = NSMenuItem(title: "Revogar \(d.name)", action: #selector(revokeDevice(_:)), keyEquivalent: "")
+                entry.target = self
+                entry.representedObject = d.id
+                entry.toolTip = d.lastSeenAt.map { "Último acesso \(Format.relative($0))" }
+                sub.addItem(entry)
+            }
+        }
+        parent.submenu = sub
+        return parent
+    }
+
+    @objc private func toggleRemote() {
+        RemoteAccess.shared.toggle()
+        rebuildMenu()
+    }
+
+    @objc private func pairPhone() { PairingWindow.shared.show() }
+
+    @objc private func revokeDevice(_ sender: NSMenuItem) {
+        guard let id = sender.representedObject as? String else { return }
+        RemoteAccess.shared.revoke(id)
+        rebuildMenu()
     }
 
     // MARK: - Tarefas Sea

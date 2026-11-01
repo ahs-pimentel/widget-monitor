@@ -308,3 +308,56 @@ extension Format {
         return (f.string(from: NSNumber(value: h)) ?? String(format: "%.2f", h)) + " h"
     }
 }
+
+// MARK: - Ações sem interface (acesso remoto pelo celular)
+
+extension SeaStore {
+    /// Descarta sem perguntar (a confirmação foi feita no celular).
+    func discardNow(_ id: Int) {
+        timers[id] = nil
+        save()
+    }
+
+    /// Tipos de atividade do projeto (o celular monta o formulário de finalizar).
+    func activityTypes(project slug: String) async -> [SeaActivityType] {
+        let client = client
+        return await withCheckedContinuation { cont in
+            queue.async { cont.resume(returning: (try? client.activityTypes(project: slug)) ?? []) }
+        }
+    }
+
+    /// Grava as horas do cronômetro no Dashboard sem abrir o formulário do Mac.
+    /// Devolve nil em caso de sucesso ou a mensagem de erro do Dashboard.
+    func logRemotely(_ id: Int, hours: Double, date: Date, activityType: Int, comment: String) async -> String? {
+        guard let t = timers[id] else { return "Cronômetro não encontrado." }
+        guard let user = userId else { return "Usuário do Dashboard ainda não carregado." }
+        guard hours > 0, hours <= 24 else { return "Horas devem ficar entre 0 e 24." }
+        pause(id)
+        busy.insert(id)
+        let client = client
+        let failure: String? = await withCheckedContinuation { cont in
+            queue.async {
+                do {
+                    _ = try client.logTime(task: t.task, user: user, date: date, hours: hours, activityType: activityType, comment: comment)
+                    cont.resume(returning: nil)
+                } catch {
+                    cont.resume(returning: error.localizedDescription)
+                }
+            }
+        }
+        busy.remove(id)
+        if failure == nil {
+            UserDefaults.standard.set(activityType, forKey: "seaActivity.\(t.task.projectSlug)")
+            timers[id] = nil
+            save()
+            show("\(Format.hours(hours)) registradas em \(t.task.title) (pelo celular)")
+        }
+        return failure
+    }
+
+    /// Tipo de atividade lembrado para o projeto (padrão do formulário no celular).
+    func preferredActivityType(_ slug: String) -> Int? {
+        let saved = UserDefaults.standard.integer(forKey: "seaActivity.\(slug)")
+        return saved > 0 ? saved : nil
+    }
+}

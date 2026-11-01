@@ -50,6 +50,7 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     func applicationWillTerminate(_ notification: Notification) {
         store.flush()
+        RemoteAccess.shared.shutdown()
     }
 
     func applicationDidFinishLaunching(_ notification: Notification) {
@@ -82,6 +83,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
         if SeaStore.shared.isAvailable { SeaStore.shared.objectWillChange.sink { [weak self] in
             DispatchQueue.main.async { self?.layoutCard() }
         }.store(in: &cancellables) }
+
+        // Acesso remoto (celular via túnel da Cloudflare), se estava ligado.
+        RemoteHub.shared.store = store
+        RemoteAccess.shared.restore()
+        RemoteAccess.shared.$status
+            .receive(on: RunLoop.main)
+            .sink { [weak self] _ in self?.rebuildMenu() }
+            .store(in: &cancellables)
 
         restoreDock()
         applyAutoHide()
