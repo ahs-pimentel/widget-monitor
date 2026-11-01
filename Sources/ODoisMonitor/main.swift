@@ -16,6 +16,30 @@ if CommandLine.arguments.contains("--test-alert") {
     exit(0)
 }
 
+// `ODoisMonitor --pair-device <nome> <arquivo>` cria um aparelho e grava o conteúdo do QR
+// (com o token) no arquivo, com permissão 0600. Nunca imprime o token.
+if let i = CommandLine.arguments.firstIndex(of: "--pair-device"), i + 2 < CommandLine.arguments.count {
+    MainActor.assumeIsolated {
+        let (device, token) = RemoteAccess.shared.pair(name: CommandLine.arguments[i + 1])
+        let payload: [String: Any] = [
+            "v": 1, "url": RemoteAccess.shared.publicURL?.absoluteString ?? "", "token": token,
+            "host": Host.current().localizedName ?? "Mac", "device": device.name,
+        ]
+        let url = URL(fileURLWithPath: CommandLine.arguments[i + 2])
+        try! JSONSerialization.data(withJSONObject: payload, options: [.sortedKeys]).write(to: url)
+        try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: url.path)
+        print("aparelho \(device.name) criado (id \(device.id))")
+    }
+    exit(0)
+}
+
+// `ODoisMonitor --revoke-device <id>` revoga um aparelho.
+if let i = CommandLine.arguments.firstIndex(of: "--revoke-device"), i + 1 < CommandLine.arguments.count {
+    RemoteAuth.shared.revoke(CommandLine.arguments[i + 1])
+    print("revogado")
+    exit(0)
+}
+
 // `ODoisMonitor --remote-state-json <arquivo>` grava o JSON de /v1/state (teste de contrato do app Android).
 if let i = CommandLine.arguments.firstIndex(of: "--remote-state-json"), i + 1 < CommandLine.arguments.count {
     MainActor.assumeIsolated {

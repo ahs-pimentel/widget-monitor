@@ -26,10 +26,23 @@ final class RemoteAuth: @unchecked Sendable {
     static let maxFailures = 10
     static let failureWindow: TimeInterval = 300
 
+    private var loadedAt: Date?
+
     private init() {
+        reloadIfChanged()
+    }
+
+    /// Relê o arquivo se outro processo o alterou (ex.: pareamento pelo binário de teste).
+    /// Chamar com o lock tomado ou na inicialização.
+    private func reloadIfChanged() {
+        let modified = (try? FileManager.default.attributesOfItem(atPath: file.path))?[.modificationDate] as? Date
+        guard modified != loadedAt else { return }
+        loadedAt = modified
         if let data = try? Data(contentsOf: file),
            let saved = try? JSONDecoder.iso.decode([PairedDevice].self, from: data) {
             devices = saved
+        } else {
+            devices = []
         }
     }
 
@@ -74,6 +87,7 @@ final class RemoteAuth: @unchecked Sendable {
         let origin = request.headers["cf-connecting-ip"] ?? "local"
         let now = Date()
         lock.lock(); defer { lock.unlock() }
+        reloadIfChanged()
         let recent = (failures[origin] ?? []).filter { now.timeIntervalSince($0) < Self.failureWindow }
         failures[origin] = recent
         guard recent.count < Self.maxFailures else { return .rateLimited }
@@ -102,6 +116,7 @@ final class RemoteAuth: @unchecked Sendable {
         guard let data = try? JSONEncoder.iso.encode(devices) else { return }
         try? data.write(to: file, options: .atomic)
         try? FileManager.default.setAttributes([.posixPermissions: 0o600], ofItemAtPath: file.path)
+        loadedAt = (try? FileManager.default.attributesOfItem(atPath: file.path))?[.modificationDate] as? Date
     }
 
     static func hash(_ token: String) -> String {

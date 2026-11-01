@@ -2,6 +2,22 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/). A versão atual fica em `VERSION`.
 
+## [1.2.0] — 2026-10-31
+
+### Adicionado
+- **App de iPhone** em `ios/` (SwiftUI, iOS 17+, projeto gerado pelo XcodeGen a partir de `project.yml`), com os recursos do Mac e do Android pela mesma API v1:
+  - **Telas:** Geral, CLIs (lista e detalhe), Mac com os processos (parar e forçar, com confirmação) e Tarefas (cronômetro em destaque, finalizar com registro de horas, notificações, projetos recolhíveis, ranking e avatar).
+  - **Live Activity:** o cronômetro da tarefa aparece na Dynamic Island e na tela bloqueada e conta sozinho.
+  - **Widgets** de tela inicial (pequeno e médio) e de tela bloqueada, com dados do App Group.
+  - **Atalhos da Siri** (App Intents): "Pausar cronômetro" e "Retomar tarefa".
+  - **Alertas em segundo plano** (BGAppRefresh) com as mesmas regras do Mac e do Android.
+  - **Pareamento:** leitor de QR nativo (VisionKit), link `odoismonitor://pair?c=…` ou código colado. O token fica no Keychain, só neste aparelho.
+  - Links `odoismonitor://tab/<aba>`; o widget abre a aba certa.
+- Mac: `--pair-device` e `--revoke-device` para criar e revogar aparelhos pelo terminal (o token vai para um arquivo com permissão 0600 e nunca é impresso). O servidor relê a lista de aparelhos quando o arquivo muda.
+
+### Corrigido
+- **Mac travava** com memória apertada: estouro aritmético em `Sampler.readMemory`, porque as páginas purgáveis podiam passar as internas e a subtração dava a volta. Isso derrubava também o acesso remoto. A subtração agora para no zero, e o uso fica limitado à RAM física.
+
 ## [1.1.2] — 2026-10-31
 
 ### Corrigido

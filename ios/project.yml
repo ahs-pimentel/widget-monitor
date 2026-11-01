@@ -1,0 +1,76 @@
+# Projeto do app de iPhone, gerado pelo XcodeGen (`xcodegen` nesta pasta).
+# O .xcodeproj não vai para o repositório; este arquivo é a fonte.
+name: ODoisMonitor
+options:
+  bundleIdPrefix: me.o2d
+  deploymentTarget:
+    iOS: "17.0"
+  createIntermediateGroups: true
+settings:
+  base:
+    DEVELOPMENT_TEAM: T44Q8TNUX8
+    CODE_SIGN_STYLE: Automatic
+    SWIFT_VERSION: "5.0"
+    MARKETING_VERSION: ${APP_VERSION}
+    CURRENT_PROJECT_VERSION: ${BUILD_NUMBER}
+    ENABLE_USER_SCRIPT_SANDBOXING: YES
+targets:
+  ODoisMonitor:
+    type: application
+    platform: iOS
+    sources:
+      - ODoisMonitor
+      - Shared
+    resources:
+      - path: ODoisMonitor/Assets.xcassets
+    entitlements:
+      path: ODoisMonitor/ODoisMonitor.entitlements
+      properties:
+        com.apple.security.application-groups: [group.me.o2d.odoismonitor]
+    info:
+      path: ODoisMonitor/Info.plist
+      properties:
+        CFBundleDisplayName: oDois Monitor
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        UILaunchScreen: { UIColorName: LaunchBackground }
+        UIApplicationSupportsIndirectInputEvents: true
+        UISupportedInterfaceOrientations: [UIInterfaceOrientationPortrait]
+        UIUserInterfaceStyle: Dark
+        NSCameraUsageDescription: A câmera lê o QR code de pareamento mostrado no Mac.
+        NSSupportsLiveActivities: true
+        UIBackgroundModes: [fetch]
+        BGTaskSchedulerPermittedIdentifiers: [me.o2d.odoismonitor.refresh]
+        ITSAppUsesNonExemptEncryption: false
+        CFBundleURLTypes:
+          - CFBundleURLName: me.o2d.odoismonitor
+            CFBundleURLSchemes: [odoismonitor]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: me.o2d.odoismonitor
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
+        TARGETED_DEVICE_FAMILY: "1"
+    dependencies:
+      - target: ODoisMonitorWidget
+  ODoisMonitorWidget:
+    type: app-extension
+    platform: iOS
+    sources:
+      - Widget
+      - Shared
+    entitlements:
+      path: Widget/Widget.entitlements
+      properties:
+        com.apple.security.application-groups: [group.me.o2d.odoismonitor]
+    info:
+      path: Widget/Info.plist
+      properties:
+        CFBundleDisplayName: oDois Monitor
+        CFBundleShortVersionString: $(MARKETING_VERSION)
+        CFBundleVersion: $(CURRENT_PROJECT_VERSION)
+        NSExtension:
+          NSExtensionPointIdentifier: com.apple.widgetkit-extension
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: me.o2d.odoismonitor.widget
+        TARGETED_DEVICE_FAMILY: "1"

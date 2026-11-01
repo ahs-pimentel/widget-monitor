@@ -199,10 +199,13 @@ private final class Sampler: @unchecked Sendable {
         if result == KERN_SUCCESS {
             let page = UInt64(vm_kernel_page_size)
             // Mesma conta do Monitor de Atividade: memória de apps + residente + comprimida.
-            let app = UInt64(stats.internal_page_count) &- UInt64(stats.purgeable_count)
+            // Com memória apertada, as páginas purgáveis podem passar as internas: a subtração
+            // precisa parar no zero (antes dava a volta e a multiplicação estourava, derrubando o app).
+            let internalPages = UInt64(stats.internal_page_count), purgeable = UInt64(stats.purgeable_count)
+            let app = internalPages > purgeable ? internalPages - purgeable : 0
             s.ramWired = UInt64(stats.wire_count) * page
             s.ramCompressed = UInt64(stats.compressor_page_count) * page
-            s.ramUsed = app * page + s.ramWired + s.ramCompressed
+            s.ramUsed = min(app * page + s.ramWired + s.ramCompressed, s.ramTotal)
             s.ramCached = (UInt64(stats.external_page_count) + UInt64(stats.purgeable_count)) * page
         }
 
