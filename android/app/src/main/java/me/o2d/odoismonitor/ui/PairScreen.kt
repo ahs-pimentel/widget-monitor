@@ -74,7 +74,7 @@ fun PairScreen(repo: MonitorRepository, initialError: String? = null) {
                 val options = GmsBarcodeScannerOptions.Builder().setBarcodeFormats(Barcode.FORMAT_QR_CODE).build()
                 GmsBarcodeScanning.getClient(context, options).startScan()
                     .addOnSuccessListener { barcode -> barcode.rawValue?.let(::submit) }
-                    .addOnFailureListener { error = "Não consegui abrir o leitor de QR code. Use “Colar código”." }
+                    .addOnFailureListener { e -> error = "Não consegui abrir o leitor de QR code (${e.message ?: e.javaClass.simpleName}). Use “Colar código”." }
             },
             enabled = !busy,
             modifier = Modifier.fillMaxWidth().height(56.dp),

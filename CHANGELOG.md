@@ -2,6 +2,12 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/). A versão atual fica em `VERSION`.
 
+## [1.1.2] — 2026-10-31
+
+### Corrigido
+- Android: no release, o leitor de QR code não abria. O R8 removia os construtores dos registradores do ML Kit, que são criados por reflexão (`NoSuchMethodException: CommonComponentRegistrar.<init>`). Foram adicionadas regras de keep em `proguard-rules.pro`.
+- A mensagem de falha do leitor agora mostra o motivo.
+
 ## [1.1.1] — 2026-10-31
 
 ### Adicionado
