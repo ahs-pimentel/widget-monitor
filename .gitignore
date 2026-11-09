@@ -31,3 +31,6 @@ CLAUDE.md
 
 # Logs locais de ferramentas
 .dev/
+
+# Instaladores gerados
+dist/
