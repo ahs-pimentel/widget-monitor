@@ -2,6 +2,17 @@
 
 Formato baseado em [Keep a Changelog](https://keepachangelog.com/pt-BR/1.1.0/); versões seguem [SemVer](https://semver.org/lang/pt-BR/). A versão atual fica em `VERSION`.
 
+## [1.2.1] — 2026-11-09
+
+### Adicionado
+- Mac: instalador em DMG (`scripts/build-dmg.sh`), com app universal (Apple Silicon e Intel) e atalho para Aplicativos. Com o certificado Developer ID no keychain, assina, notariza na Apple e grampeia o DMG; outros Macs abrem sem aviso do Gatekeeper. `build-app.sh` ganha `UNIVERSAL=1`.
+- `docs/ux-decisoes.md` com as decisões de interface.
+
+### Corrigido
+- Mac: diálogos de ação (parar processo, descartar e finalizar timer, erro do Dashboard) ficavam atrás do notch aberto, e o notch congelava na tela enquanto o diálogo estava aberto. Agora o diálogo abre por cima e o notch continua respondendo.
+- Mac: com muitas tarefas do Dashboard, o card passava da altura do notch e cortava o cabeçalho e o avatar. A lista agora rola por dentro e o resto do card fica fixo.
+- Mac: lista de processos das CLIs com mais de 6 itens passa a rolar.
+
 ## [1.2.0] — 2026-10-31
 
 ### Adicionado
