@@ -274,8 +274,7 @@ extension AppDelegate: NSMenuDelegate {
         alert.addButton(withTitle: "Parar")
         alert.addButton(withTitle: "Forçar")
         alert.addButton(withTitle: "Cancelar")
-        NSApp.activate(ignoringOtherApps: true)
-        switch alert.runModal() {
+        switch alert.runAboveMonitor() {
         case .alertFirstButtonReturn: SystemMonitor.shared.stop(pid)
         case .alertSecondButtonReturn: SystemMonitor.shared.stop(pid, force: true)
         default: break

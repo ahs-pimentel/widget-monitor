@@ -1,6 +1,23 @@
 import AppKit
 import SwiftUI
 
+extension NSWindow.Level {
+    /// Acima da barra de menus, para cobrir a faixa em volta da câmera.
+    static let notch = NSWindow.Level(rawValue: NSWindow.Level.mainMenu.rawValue + 3)
+}
+
+extension NSAlert {
+    /// Mostra o alerta acima do notch e dos cards; no nível normal ele ficava escondido
+    /// atrás do painel aberto, sem como clicar.
+    @MainActor
+    @discardableResult
+    func runAboveMonitor() -> NSApplication.ModalResponse {
+        NSApp.activate(ignoringOtherApps: true)
+        window.level = NSWindow.Level(rawValue: NSWindow.Level.notch.rawValue + 1)
+        return runModal()
+    }
+}
+
 /// Painel flutuante sem borda que não rouba o foco do app em uso.
 final class FloatingPanel: NSPanel {
     init(level: NSWindow.Level) {

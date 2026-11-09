@@ -60,7 +60,7 @@ struct FinishForm {
         alert.addButton(withTitle: "Cancelar")
         alert.window.initialFirstResponder = commentField
 
-        while alert.runModal() == .alertFirstButtonReturn {
+        while alert.runAboveMonitor() == .alertFirstButtonReturn {
             let text = hoursField.stringValue.replacingOccurrences(of: ",", with: ".")
             guard let hours = Double(text), hours > 0, hours <= 24 else {
                 alert.informativeText = "Informe as horas como número entre 0 e 24 (ex.: 1,5)."

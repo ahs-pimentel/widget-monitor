@@ -20,8 +20,7 @@ final class NotchController {
 
     init(store: UsageStore) {
         self.store = store
-        // Acima da barra de menus, para cobrir a faixa em volta da câmera.
-        panel = FloatingPanel(level: NSWindow.Level(rawValue: NSWindow.Level.mainMenu.rawValue + 3))
+        panel = FloatingPanel(level: .notch)
         panel.ignoresMouseEvents = true
         let host = NSHostingView(rootView: NotchView(store: store, state: state, selection: selection))
         host.sizingOptions = []
@@ -62,9 +61,13 @@ final class NotchController {
         place()
         panel.orderFrontRegardless()
         timer?.invalidate()
-        timer = Timer.scheduledTimer(withTimeInterval: 1.0 / 20, repeats: true) { [weak self] _ in
+        // Modo .common: continua rodando durante um NSAlert.runModal; no modo padrão o
+        // notch congelava aberto por cima do diálogo.
+        let timer = Timer(timeInterval: 1.0 / 20, repeats: true) { [weak self] _ in
             Task { @MainActor in self?.tick() }
         }
+        RunLoop.main.add(timer, forMode: .common)
+        self.timer = timer
     }
 
     func hide() {

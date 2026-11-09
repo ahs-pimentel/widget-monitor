@@ -200,8 +200,7 @@ final class SeaStore: ObservableObject {
         alert.informativeText = "\(Self.clock(t.elapsed())) não serão registrados no Dashboard."
         alert.addButton(withTitle: "Descartar")
         alert.addButton(withTitle: "Cancelar")
-        NSApp.activate(ignoringOtherApps: true)
-        guard alert.runModal() == .alertFirstButtonReturn else { return }
+        guard alert.runAboveMonitor() == .alertFirstButtonReturn else { return }
         timers[id] = nil
         save()
     }
@@ -232,7 +231,6 @@ final class SeaStore: ObservableObject {
             return
         }
         let form = FinishForm(timer: t, types: types, preferred: Self.preferredActivity(t.task.projectSlug))
-        NSApp.activate(ignoringOtherApps: true)
         guard let result = form.run() else { return }
         UserDefaults.standard.set(result.activityType, forKey: "seaActivity.\(t.task.projectSlug)")
 
@@ -263,8 +261,7 @@ final class SeaStore: ObservableObject {
                     let alert = NSAlert()
                     alert.messageText = "O Dashboard recusou a operação"
                     alert.informativeText = failure
-                    NSApp.activate(ignoringOtherApps: true)
-                    alert.runModal()
+                    alert.runAboveMonitor()
                 } else {
                     done()
                 }

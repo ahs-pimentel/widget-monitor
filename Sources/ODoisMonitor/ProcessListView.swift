@@ -22,6 +22,21 @@ struct ProcessListView: View {
                 Text("Nenhuma CLI de LLM rodando agora.")
                     .font(.system(size: 11)).foregroundStyle(.secondary)
             }
+            if list.count > Self.visibleRows {
+                // Com dezenas de processos o card passava da altura da janela e quebrava o notch.
+                ScrollView(.vertical) { rows(list) }
+                    .frame(height: Self.scrollHeight)
+            } else {
+                rows(list)
+            }
+        }
+    }
+
+    static let visibleRows = 6
+    static let scrollHeight: CGFloat = 230
+
+    private func rows(_ list: [CLIProcess]) -> some View {
+        VStack(alignment: .leading, spacing: 6) {
             ForEach(list) { p in
                 row(p)
                 if p.id != list.last?.id { Divider().opacity(0.4) }
