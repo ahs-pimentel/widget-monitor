@@ -19,6 +19,10 @@ struct SeaTasksCardView: View {
     @ObservedObject var sea: SeaStore
     var showHeaderIcon = true
 
+    /// Altura natural da lista de tarefas; acima de `maxListHeight` ela rola.
+    @State private var listHeight: CGFloat = 0
+    static let maxListHeight: CGFloat = 300
+
     var body: some View {
         VStack(alignment: .leading, spacing: CardMetrics.spacing) {
             header
@@ -406,11 +410,20 @@ struct SeaTasksCardView: View {
             let groups = Dictionary(grouping: free, by: \.projectSlug)
                 .map { (slug: $0.key, name: $0.value[0].projectName, tasks: $0.value) }
                 .sorted { $0.name < $1.name }
-            VStack(alignment: .leading, spacing: 8) {
-                ForEach(groups, id: \.slug) { group in
-                    projectGroup(slug: group.slug, name: group.name, tasks: group.tasks)
+            // Com muitas tarefas o card passava da altura do notch e o topo (cabeçalho,
+            // avatar) era cortado. A lista rola por dentro; o resto do card fica fixo.
+            ScrollView(.vertical) {
+                VStack(alignment: .leading, spacing: 8) {
+                    ForEach(groups, id: \.slug) { group in
+                        projectGroup(slug: group.slug, name: group.name, tasks: group.tasks)
+                    }
                 }
+                .background(GeometryReader { geo in
+                    Color.clear.preference(key: ListHeightKey.self, value: geo.size.height)
+                })
             }
+            .frame(height: min(listHeight, Self.maxListHeight))
+            .onPreferenceChange(ListHeightKey.self) { listHeight = $0 }
         } else if sea.updatedAt != nil, sea.timers.isEmpty {
             VStack(spacing: 6) {
                 Image(systemName: "checkmark.circle")
@@ -512,4 +525,9 @@ struct SeaTasksCardView: View {
         .buttonStyle(.plain)
         .help("Abrir no Dashboard")
     }
+}
+
+private struct ListHeightKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) { value = max(value, nextValue()) }
 }
